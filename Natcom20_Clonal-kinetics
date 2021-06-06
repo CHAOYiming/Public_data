@@ -1,0 +1,14 @@
+# Sheih, Alyssa et al. “Clonal kinetics and single-cell transcriptional profiling of CAR-T cells in patients undergoing CD19 CAR-T immunotherapy.” Nature communications vol. 11,1 219. 10 Jan. 2020, doi:10.1038/s41467-019-13880-1
+# https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE125881
+
+# CLL-1_IP genomicDNA
+nohup fastq-dump --split-3 SRR8506520 &
+
+# CLL-1_IP 10x scRNA-seq
+nohup fastq-dump --split-3 SRR8506536 &
+
+
+
+
+
+
