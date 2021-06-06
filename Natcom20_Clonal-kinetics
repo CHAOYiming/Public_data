@@ -1,11 +1,31 @@
 # Sheih, Alyssa et al. “Clonal kinetics and single-cell transcriptional profiling of CAR-T cells in patients undergoing CD19 CAR-T immunotherapy.” Nature communications vol. 11,1 219. 10 Jan. 2020, doi:10.1038/s41467-019-13880-1
 # https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE125881
 
-# CLL-1_IP genomicDNA
+# CLL-1_IP 5'GE
 nohup fastq-dump --split-3 SRR8506520 &
 
-# CLL-1_IP 10x scRNA-seq
+# CLL-1_IP VDJ
 nohup fastq-dump --split-3 SRR8506536 &
+
+# rename fastq files
+mv SRR8506536_1.fastq CLL-1_IP_S1_L001_R1_001.fastq
+mv SRR8506536_2.fastq CLL-1_IP_S1_L001_R2_001.fastq
+
+# download vdj reference
+curl -O https://cf.10xgenomics.com/supp/cell-vdj/refdata-cellranger-vdj-GRCh38-alts-ensembl-5.0.0.tar.gz
+tar -zxvf refdata-cellranger-vdj-GRCh38-alts-ensembl-5.0.0.tar.gz
+pwd
+# /home/yiming/reference/GRCh38_vdj/
+
+# run cellranger vdj
+cellranger vdj --id=CLL-1_IP --fastqs=/home/yiming/nc2020/sra --sample=CLL-1_IP --reference=/home/yiming/reference/GRCh38_vdj/refdata-cellranger-vdj-GRCh38-alts-ensembl-5.0.0
+
+# [error] Pipestance failed. Error log at:
+# CLL-1_IP/SC_VDJ_ASSEMBLER_CS/SC_MULTI_CORE/MULTI_CHEMISTRY_DETECTOR/_GEM_WELL_CHEMISTRY_DETECTOR/VDJ_CHEMISTRY_DETECTOR/DETECT_CHEMISTRY/fork0/chnk0-ua936bca6f9/_errors
+
+
+
+
 
 
 
