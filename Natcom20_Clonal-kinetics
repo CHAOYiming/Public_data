@@ -19,10 +19,12 @@ pwd
 
 # run cellranger vdj
 cellranger vdj --id=CLL-1_IP --fastqs=/home/yiming/nc2020/sra --sample=CLL-1_IP --reference=/home/yiming/reference/GRCh38_vdj/refdata-cellranger-vdj-GRCh38-alts-ensembl-5.0.0
-
 # [error] Pipestance failed. Error log at:
 # CLL-1_IP/SC_VDJ_ASSEMBLER_CS/SC_MULTI_CORE/MULTI_CHEMISTRY_DETECTOR/_GEM_WELL_CHEMISTRY_DETECTOR/VDJ_CHEMISTRY_DETECTOR/DETECT_CHEMISTRY/fork0/chnk0-ua936bca6f9/_errors
 
+# run cellranger count
+cellranger count --id=CLL-1_IP --fastqs=/home/yiming/nc2020/sra --sample=CLL-1_IP --transcriptome=/home/yiming/reference/refdata-gex-GRCh38-2020-A
+# chemical error
 
 
 
