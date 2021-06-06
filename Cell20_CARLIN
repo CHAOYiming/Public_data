@@ -1,0 +1,797 @@
+# single cell pre-processing on HSC-L
+# 2021-3
+# CHAO Yiming
+
+
+# download cell ranger
+wget -O cellranger-6.0.1.tar.gz "https://cf.10xgenomics.com/releases/cell-exp/cellranger-6.0.1.tar.gz?Expires=1619298309&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9jZi4xMHhnZW5vbWljcy5jb20vcmVsZWFzZXMvY2VsbC1leHAvY2VsbHJhbmdlci02LjAuMS50YXIuZ3oiLCJDb25kaXRpb24iOnsiRGF0ZUxlc3NUaGFuIjp7IkFXUzpFcG9jaFRpbWUiOjE2MTkyOTgzMDl9fX1dfQ__&Signature=RksZ9QMSkhrBzbo~34gwFlUJ2nP3Sznud9uU1dWSxl-dvTrvsPJj8PpzqoazPEl-MW7M7B66n6HZRSIumDO5Mj8TbAJ4PKc9A19GI4gVHCcucFw-4DqnezedBltd88CXYUEqq3hL8TykC0FJuNpOvuqmCMWsn4KnKmFSmDBhJGONY16Vp5qsBJRnIh9vxwySdzRIi-xJszYyLEcsXYUrr7xooj1Qlv4hy0rccEBcfMyZCG~sAzdks1UXL8n-jtR46QXBvoMjqfTal6w2zGj5b-s0YSFLCyqJN16YGhzo6B56pnPtzPNuOjlMfGPqFD9WzqMipbAD-8mV4qW13gH48g__&Key-Pair-Id=APKAI7S6A5RYOXBWRPDA"
+
+# decompress
+tar -zxvf cellranger-6.0.1.tar.gz
+
+# add cell ranger to the path
+cd cellranger-6.0.1
+pwd
+export PATH=/home/yiming/application/cellranger-6.0.1:$PATH
+which cellranger
+
+# perform a sitecheck
+# Running Cell Ranger requires at least 8 CPUs, preferably 16, and at least 64GB of RAM, preferably 128. 
+cellranger sitecheck > sitecheck.txt
+less sitecheck.txt
+
+# output
+# =====================================================================
+# CPU Cores
+# grep -c processor /proc/cpuinfo
+# ---------------------------------------------------------------------
+# 80
+# =====================================================================
+# =====================================================================
+# Memory Total
+# grep MemTotal /proc/meminfo | cut -d ':' -f 2 | sed 's/^[ \t]*//'
+# ---------------------------------------------------------------------
+# 394452448 kB
+# =====================================================================
+
+# perform testrun
+cellranger testrun --id=check_install
+
+# install sra-toolkits
+conda install -c bioconda sra-tools
+
+# download fastq file from GEO
+# nohup fastq-dump --split-files SRR11311940 (?)
+mkdir data2
+nohup fastq-dump --split-3 SRR11311940 &
+
+# rename the fastq file
+mv SRR11311940_1.fastq HSC_L_S1_L001_R1_001.fastq
+mv SRR11311940_2.fastq HSC_L_S1_L001_R2_001.fastq
+
+# get the reference transcriptome and decompress
+mkdir reference
+
+wget https://cf.10xgenomics.com/supp/cell-exp/refdata-cellranger-GRCh38-3.0.0.tar.gz
+tar -zxvf refdata-cellranger-GRCh38-3.0.0.tar.gz
+
+wget https://cf.10xgenomics.com/supp/cell-exp/refdata-gex-GRCh38-2020-A.tar.gz
+tar -zxvf refdata-gex-GRCh38-2020-A.tar.gz
+
+wget https://cf.10xgenomics.com/supp/cell-exp/refdata-gex-mm10-2020-A.tar.gz
+tar -zxvf refdata-gex-mm10-2020-A.tar.gz
+
+# run cellranger count
+mkdir cellranger_run
+nohup cellranger count --id=HSC_L \
+					   --fastqs=/home/yiming/CARLIN/sra/ \
+					   --sample=HSC_L \
+					   --transcriptome=/home/yiming/reference/refdata-gex-mm10-2020-A &
+# An extremely low rate of correct barcodes was observed for all the candidate chemistry choices for the input: Sample HSC_L in "/home/yiming/CARLIN/sra". Please check your input data.
+# - 0.3% for chemistry SC3Pv3
+# - 0.1% for chemistry SC5P-PE
+# - 0.1% for chemistry SC3Pv2
+# - 0.0% for chemistry SC3Pv3LT
+
+cellranger count --id=HSC_L2 \
+				 --fastqs=/home/yiming/CARLIN/sra/ \
+				 --sample=HSC_L \
+				 --transcriptome=/home/yiming/reference/refdata-gex-mm10-2020-A \
+				 --chemistry SC3Pv2
+
+# You selected chemistry SC3Pv2, which expects the cell barcode sequence in read1.
+# In the input data, an extremely low rate of correct barcodes was observed for this chemistry (0.1%).
+# Please check your input data and chemistry selection. Note: manual chemistry detection is not required in most cases.
+
+cellranger count --id=HSC_L3 \
+				 --fastqs=/home/yiming/CARLIN/sra/ \
+				 --sample=HSC_L \
+				 --transcriptome=/home/yiming/reference/refdata-gex-mm10-2020-A \
+				 --chemistry SC3Pv3
+
+# You selected chemistry SC3Pv3, which expects the cell barcode sequence in read1.
+# In the input data, an extremely low rate of correct barcodes was observed for this chemistry (0.3%).
+# Please check your input data and chemistry selection. Note: manual chemistry detection is not required in most cases.
+
+cellranger count --id=HSC_L3 --fastqs=/home/yiming/CARLIN/sra/ --sample=HSC_L --transcriptome=/home/yiming/reference/refdata-gex-mm10-2020-A --chemistry SC3Pv3
+
+
+# start with another tutorial 
+# https://scrnaseq-course.cog.sanger.ac.uk/website/index.html
+
+# install fastqc
+conda install -c bioconda fastqc
+
+# rename fastq file
+mv HSC_L_S1_L001_R1_001.fastq HSC_L_1.fastq
+mv HSC_L_S1_L001_R2_001.fastq HSC_L_2.fastq
+
+# fastqc
+fastqc -o fastqc_result sra/HSC_L_1.fastq sra/HSC_L_2.fastq
+
+scp yiming@10.64.51.15:/home/yiming/CARLIN/fastqc_result/HSC_L_1_fastqc.html /Users/guagua/Downloads
+
+get /home/yiming/CARLIN/fastqc_result/HSC_L_1_fastqc.html /Users/guagua/Downloads
+get /home/yiming/CARLIN/fastqc_result/HSC_L_2_fastqc.html /Users/guagua/Downloads
+
+# download genome sequence file [fasta] and annotation file [GTF] 
+# should be the same version and from same website
+# http://ftp.ensembl.org/pub/release-103/fasta/homo_sapiens/
+wget http://ftp.ensembl.org/pub/release-103/fasta/homo_sapiens/cdna/Homo_sapiens.GRCh38.cdna.all.fa.gz
+wget http://ftp.ensembl.org/pub/release-103/gtf/homo_sapiens/Homo_sapiens.GRCh38.103.gtf.gz
+
+# decompress the files
+gunzip Homo_sapiens.GRCh38.cdna.all.fa.gz
+gunzip Homo_sapiens.GRCh38.103.gtf.gz
+
+# generate genome index with STAR
+STAR --runThreadN 16 --runMode genomeGenerate --genomeDir /home/yiming/reference --genomeFastaFiles Homo_sapiens.GRCh38.cdna.all.fa --sjdbGTFfile Homo_sapiens.GRCh38.103.gtf --outFileNamePrefix star/genome_ --sjdbOverhang ReadLength-1
+
+nohup STAR --runThreadN 16 \
+		   --runMode genomeGenerate \
+		   --genomeDir /home/yiming/reference \
+		   --genomeFastaFiles Homo_sapiens.GRCh38.cdna.all.fa \
+		   --sjdbGTFfile Homo_sapiens.GRCh38.103.gtf \
+		   --outFileNamePrefix star/genome_ \
+		   --sjdbOverhang ReadLength-1 &
+# EXITING because of FATAL INPUT PARAMETER ERROR: for generating genome with annotations (--sjdbFileChrStartEnd or --sjdbGTFfile options)
+# you need to specify >0 --sjdbOverhang
+# SOLUTION: re-run genome generation specifying non-zero --sjdbOverhang, which ideally should be equal to OneMateLength-1, or could be chosen generically as ~100
+
+nohup STAR --runThreadN 16 \
+		   --runMode genomeGenerate \
+		   --genomeDir /home/yiming/reference \
+		   --genomeFastaFiles Homo_sapiens.GRCh38.cdna.all.fa \
+		   --sjdbGTFfile Homo_sapiens.GRCh38.103.gtf \
+		   --outFileNamePrefix star/genome_ &
+# EXITING because of FATAL PARAMETER ERROR: limitGenomeGenerateRAM=31000000000is too small for your genome
+# SOLUTION: please specify --limitGenomeGenerateRAM not less than 137518645514 and make that much RAM available 
+
+nohup STAR --runThreadN 16 \
+		   --limitGenomeGenerateRAM 137518645514 \
+		   --runMode genomeGenerate \
+		   --genomeDir /home/yiming/reference \
+		   --genomeFastaFiles Homo_sapiens.GRCh38.cdna.all.fa \
+		   --sjdbGTFfile Homo_sapiens.GRCh38.103.gtf \
+		   --outFileNamePrefix star/genome_ &
+# Fatal INPUT FILE error, no valid exon lines in the GTF file: Homo_sapiens.GRCh38.103.gtf
+# Solution: check the formatting of the GTF file. One likely cause is the difference in chromosome naming between GTF and FASTA file.
+
+# download and decompress DNA fasta file from ensembl
+wget http://ftp.ensembl.org/pub/release-103/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.toplevel.fa.gz
+gunzip Homo_sapiens.GRCh38.dna.toplevel.fa.gz
+
+# generate genome index with STAR
+nohup STAR --runThreadN 16 \
+		   --limitGenomeGenerateRAM 137518645514 \
+		   --runMode genomeGenerate \
+		   --genomeDir /home/yiming/reference \
+		   --genomeFastaFiles Homo_sapiens.GRCh38.dna.toplevel.fa \
+		   --sjdbGTFfile Homo_sapiens.GRCh38.103.gtf \
+		   --outFileNamePrefix star/genome_ &
+# fail
+
+# star alignment
+nohup STAR --runThreadN 16 \
+		   --genomeDir /home/yiming/reference/refdata-cellranger-GRCh38-3.0.0/star \
+		   --readFilesIn ../sra/HSC_L_1.fastq ../sra/HSC_L_2.fastq &
+# EXITING because of FATAL ERROR: Genome version: 20201 is INCOMPATIBLE with running STAR version: 2.7.8a
+# SOLUTION: please re-generate genome from scratch with running version of STAR, or with version: 2.7.4a
+
+# try another version of GRCh38 index
+nohup STAR --runThreadN 16 \
+		   --genomeDir /home/yiming/reference/refdata-gex-GRCh38-2020-A/star \
+		   --readFilesIn ../sra/HSC_L_1.fastq ../sra/HSC_L_2.fastq &
+# EXITING because of FATAL ERROR: Genome version: 20201 is INCOMPATIBLE with running STAR version: 2.7.8a
+# SOLUTION: please re-generate genome from scratch with running version of STAR, or with version: 2.7.4a
+
+# install older version of star
+conda install -c bioconda STAR=2.7.4a
+# EXITING because of FATAL ERROR: Genome version: 20201 is INCOMPATIBLE with running STAR version: 2.7.4a
+# SOLUTION: please re-generate genome from scratch with running version of STAR, or with version: 2.7.4a
+
+# generate the index manully
+nohup STAR --runThreadN 16 \
+		   --runMode genomeGenerate \
+		   --genomeDir /home/yiming/reference/refdata-gex-GRCh38-2020-A/fasta \
+		   --genomeFastaFiles genome.fa \
+		   --sjdbGTFfile /home/yiming/reference/refdata-gex-GRCh38-2020-A/genes/genes.gtf \
+		   --outFileNamePrefix star/genome_ &
+# EXITING because of INPUT ERROR: could not open genomeFastaFile: genome.fa
+
+nohup STAR --runThreadN 16 \
+		   --runMode genomeGenerate \
+		   --genomeDir /home/yiming/reference \
+		   --genomeFastaFiles Homo_sapiens.GRCh38.cdna.all.fa \
+		   --sjdbGTFfile /home/yiming/reference/refdata-gex-GRCh38-2020-A/genes/genes.gtf \
+		   --outFileNamePrefix star/genome_ &
+# EXITING because of FATAL PARAMETER ERROR: limitGenomeGenerateRAM=31000000000is too small for your genome
+# SOLUTION: please specify --limitGenomeGenerateRAM not less than 137518671914 and make that much RAM available
+
+nohup STAR --runThreadN 16 \
+		   --limitGenomeGenerateRAM 137518671914 \
+		   --runMode genomeGenerate \
+		   --genomeDir /home/yiming/reference \
+		   --genomeFastaFiles Homo_sapiens.GRCh38.cdna.all.fa \
+		   --sjdbGTFfile /home/yiming/reference/refdata-gex-GRCh38-2020-A/genes/genes.gtf \
+		   --outFileNamePrefix star/genome_ &
+# -------------------------------
+# ##### Final effective command line:
+# STAR   --runMode genomeGenerate   --runThreadN 16   --genomeDir /home/yiming/reference   --genomeFastaFiles Homo_sapiens.GRCh38.cdna.all.fa      --lim
+# itGenomeGenerateRAM 137518671914   --outFileNamePrefix star/genome_   --sjdbGTFfile /home/yiming/reference/refdata-gex-GRCh38-2020-A/genes/genes.gtf
+# ----------------------------------------
+# Fatal INPUT FILE error, no valid exon lines in the GTF file: /home/yiming/reference/refdata-gex-GRCh38-2020-A/genes/genes.gtf
+# Solution: check the formatting of the GTF file. Most likely cause is the difference in chromosome naming between GTF and FASTA file.
+
+# genome sequence and annotation from UCSC
+# https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/latest/
+# https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/genes/
+wget https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/latest/hg38.fa.gz
+wget https://hgdownload.soe.ucsc.edu/goldenPath/hg38/bigZips/genes/hg38.ncbiRefSeq.gtf.gz
+gunzip hg38.fa.gz
+gunzip hg38.ncbiRefSeq.gtf.gz
+
+# generate genome index
+nohup STAR --runThreadN 16 \
+		   --runMode genomeGenerate \
+		   --genomeDir /home/yiming/reference \
+		   --genomeFastaFiles hg38.fa \
+		   --sjdbGTFfile hg38.ncbiRefSeq.gtf \
+		   --outFileNamePrefix star/genome_ &
+# EXITING because of INPUT ERROR: could not open genomeFastaFile: hg38.fa
+
+# without gtf file
+STAR --runThreadN 16 --runMode genomeGenerate  --genomeDir /home/yiming/reference --genomeFastaFiles /home/yiming/reference/hg38.fa
+# EXITING because of INPUT ERROR: could not open genomeFastaFile: hg38.fa
+
+STAR --runThreadN 16 --runMode genomeGenerate  --genomeDir /home/yiming/reference --genomeFastaFiles Homo_sapiens.GRCh38.cdna.all.fa
+# EXITING because of INPUT ERROR: could not open genomeFastaFile: Homo_sapiens.GRCh38.cdna.all.fa
+
+# NEED TO SPECIFY THE FULL PATH OF fasta & gtf FILES!!!
+
+# generate genome index
+nohup STAR --runThreadN 16 \
+		   --limitGenomeGenerateRAM 137518645514 \
+		   --runMode genomeGenerate \
+		   --genomeDir /home/yiming/reference \
+		   --genomeFastaFiles /home/yiming/reference/Homo_sapiens.GRCh38.cdna.all.fa \
+		   --sjdbGTFfile /home/yiming/reference/Homo_sapiens.GRCh38.103.gtf \
+		   --outFileNamePrefix star/genome_ \
+		   --sjdbOverhang 100 &
+# Fatal INPUT FILE error, no valid exon lines in the GTF file: /home/yiming/reference/Homo_sapiens.GRCh38.103.gtf
+# Solution: check the formatting of the GTF file. One likely cause is the difference in chromosome naming between GTF and FASTA file.
+
+# delete files with 'SA'
+find . -maxdepth 1  -regex ".*SA.*" -exec rm -rf {} \;
+
+# generate index with cDNA fasta without gtf
+nohup STAR --runThreadN 16 \
+		   --limitGenomeGenerateRAM 137518645514 \
+		   --runMode genomeGenerate \
+		   --genomeDir /home/yiming/reference \
+		   --genomeFastaFiles /home/yiming/reference/Homo_sapiens.GRCh38.cdna.all.fa \
+		   --genomeSAindexNbases 13 &
+# finished successfully
+
+# download primary assembly DNA
+nohup wget http://ftp.ensembl.org/pub/release-103/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz &
+gunzip Homo_sapiens.GRCh38.dna.primary_assembly.fa.gz
+
+# generate index with primary assembly DNA and gtf file
+nohup STAR --runThreadN 16 \
+		   --runMode genomeGenerate \
+		   --genomeDir /home/yiming/reference/GRCh38_DNA_primary_assembly_index \
+		   --genomeFastaFiles /home/yiming/reference/GRCh38_DNA_primary_assembly_index/Homo_sapiens.GRCh38.dna.primary_assembly.fa \
+		   --sjdbGTFfile /home/yiming/reference/GRCh38_DNA_primary_assembly_index/Homo_sapiens.GRCh38.103.gtf \
+		   --sjdbOverhang 100 &
+# finished successfully
+
+
+# run STAR alignment on CARLIN_HSC_L sample
+nohup STAR --runThreadN 16 \
+		   --genomeDir /home/yiming/reference/GRCh38_DNA_primary_assembly_index \
+		   --readFilesIn /home/yiming/CARLIN/sra/HSC_L_1.fastq /home/yiming/CARLIN/sra/HSC_L_2.fastq &
+# Apr 26 22:27:31 ..... started STAR run
+# Apr 26 22:27:31 ..... loading genome
+# Apr 26 22:27:53 ..... started mapping
+# Apr 26 22:30:31 ..... finished mapping
+# Apr 26 22:30:35 ..... finished successfully
+#                                Started job on |       Apr 26 22:27:31
+#                            Started mapping on |       Apr 26 22:27:53
+#                                   Finished on |       Apr 26 22:30:35
+#      Mapping speed, Million of reads per hour |       34.32
+#
+#                         Number of input reads |       1544209
+#                     Average input read length |       478
+#                                   UNIQUE READS:
+#                  Uniquely mapped reads number |       0
+#                       Uniquely mapped reads % |       0.00%
+#                         Average mapped length |       0.00
+#                      Number of splices: Total |       0
+#           Number of splices: Annotated (sjdb) |       0
+#                      Number of splices: GT/AG |       0
+#                      Number of splices: GC/AG |       0
+#                      Number of splices: AT/AC |       0
+#              Number of splices: Non-canonical |       0
+#                     Mismatch rate per base, % |       -nan%
+#                        Deletion rate per base |       0.00%
+#                       Deletion average length |       0.00
+#                       Insertion rate per base |       0.00%
+#                      Insertion average length |       0.00
+#                            MULTI-MAPPING READS:
+#       Number of reads mapped to multiple loci |       1
+#            % of reads mapped to multiple loci |       0.00%
+#       Number of reads mapped to too many loci |       0
+#            % of reads mapped to too many loci |       0.00%
+#                                 UNMAPPED READS:
+# Number of reads unmapped: too many mismatches |       0
+#      % of reads unmapped: too many mismatches |       0.00%
+#           Number of reads unmapped: too short |       1541498
+#                % of reads unmapped: too short |       99.82%
+#               Number of reads unmapped: other |       2710
+#                    % of reads unmapped: other |       0.18%
+#                                 CHIMERIC READS:
+#                      Number of chimeric reads |       0
+#                           % of chimeric reads |       0.00%
+
+
+# bulit-in genome index in cellranger
+--genomeDir /home/yiming/reference/refdata-gex-GRCh38-2020-A/star
+
+# run STARsolo on CARLIN_HSC_L data with built-in index
+nohup STAR --runThreadN 16 \
+		   --genomeDir /home/yiming/reference/refdata-gex-GRCh38-2020-A/star \
+		   --readFilesIn /home/yiming/CARLIN/sra/HSC_L_2.fastq /home/yiming/CARLIN/sra/HSC_L_1.fastq \
+		   --soloCBwhitelist /home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt &
+# EXITING because of FATAL ERROR: Genome version: 20201 is INCOMPATIBLE with running STAR version: 2.7.8a
+# SOLUTION: please re-generate genome from scratch with running version of STAR, or with version: 2.7.4a
+
+# run STARsolo with primary assembly index
+nohup STAR --runThreadN 16 \
+		   --genomeDir /home/yiming/reference/GRCh38_DNA_primary_assembly_index \
+		   --readFilesIn /home/yiming/CARLIN/sra/HSC_L_2.fastq /home/yiming/CARLIN/sra/HSC_L_1.fastq \
+		   --soloCBwhitelist /home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt &
+# Apr 27 13:14:33 ..... started STAR run
+# Apr 27 13:14:33 ..... loading genome
+# Apr 27 13:14:56 ..... started mapping
+# Apr 27 13:17:35 ..... finished mapping
+# Apr 27 13:17:38 ..... finished successfully
+#                                Started job on |       Apr 27 13:14:33
+#                            Started mapping on |       Apr 27 13:14:56
+#                                   Finished on |       Apr 27 13:17:38
+#      Mapping speed, Million of reads per hour |       34.32
+#
+#                         Number of input reads |       1544209
+#                     Average input read length |       478
+#                                   UNIQUE READS:
+#                  Uniquely mapped reads number |       0
+#                       Uniquely mapped reads % |       0.00%
+#                         Average mapped length |       0.00
+#                      Number of splices: Total |       0
+#           Number of splices: Annotated (sjdb) |       0
+#                      Number of splices: GT/AG |       0
+#                      Number of splices: GC/AG |       0
+#                      Number of splices: AT/AC |       0
+#              Number of splices: Non-canonical |       0
+#                     Mismatch rate per base, % |       -nan%
+#                        Deletion rate per base |       0.00%
+#                       Deletion average length |       0.00
+#                       Insertion rate per base |       0.00%
+#                      Insertion average length |       0.00
+#                            MULTI-MAPPING READS:
+#       Number of reads mapped to multiple loci |       1
+#            % of reads mapped to multiple loci |       0.00%
+#       Number of reads mapped to too many loci |       0
+#            % of reads mapped to too many loci |       0.00%
+#                                 UNMAPPED READS:
+# Number of reads unmapped: too many mismatches |       0
+#      % of reads unmapped: too many mismatches |       0.00%
+#           Number of reads unmapped: too short |       1541466
+#                % of reads unmapped: too short |       99.82%
+#               Number of reads unmapped: other |       2742
+#                    % of reads unmapped: other |       0.18%
+#                                 CHIMERIC READS:
+#                      Number of chimeric reads |       0
+#                           % of chimeric reads |       0.00%
+
+nohup STAR --runThreadN 16 \
+		   --genomeDir /home/yiming/reference/GRCh38_DNA_primary_assembly_index \
+		   --readFilesIn /home/yiming/CARLIN/sra/HSC_L_2.fastq /home/yiming/CARLIN/sra/HSC_L_1.fastq \
+		   --soloType Droplet \
+		   --soloCBwhitelist /home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt &
+# EXITING because of FATAL ERROR in input read file: the total length of barcode sequence is 250 not equal to expected 26
+# Read ID=@SRR11311940.1 ;  Sequence=TTATGCAGGCGCAACTAGAAGGCACAGTCGAGGCTGATCAGCGAGCTCTAGTTAGAATTCTAGCTCCCATCGTCTGCGTGCTACGTATCGACTCCATATCGTCAGCGTCTCGACTCGACTCCATCGCGTGTACGCATACTATCGACTCCATCGCGTGTGCGTACAGTCGCGACTCCATAGTCGACGAGCGCGCTCTCGACTCCATAGCGTGCGCGTATCGTATCGACTCCATAGTCGCTCATAGCGCTCG
+# SOLUTION: check the formatting of input read files.
+# If UMI+CB length is not equal to the barcode read length, specify barcode read length with --soloBarcodeReadLength
+# To avoid checking of barcode read length, specify --soloBarcodeReadLength 0
+# Apr 27 13:25:05 ...... FATAL ERROR, exiting
+# Segmentation fault
+
+nohup STAR --runThreadN 16 \
+		   --genomeDir /home/yiming/reference/refdata-gex-mm10-2020-A/star \
+		   --readFilesIn /home/yiming/CARLIN/sra/HSC_L_2.fastq /home/yiming/CARLIN/sra/HSC_L_1.fastq \
+		   --soloType Droplet \
+		   --soloCBwhitelist /home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt &
+
+# generate mm10 genome index
+nohup STAR --runThreadN 16 \
+		   --runMode genomeGenerate \
+		   --genomeDir /home/yiming/reference/refdata-gex-mm10-2020-A/fasta \
+		   --genomeFastaFiles /home/yiming/reference/refdata-gex-mm10-2020-A/fasta/genome.fa \
+		   --sjdbGTFfile /home/yiming/reference/refdata-gex-mm10-2020-A/genes/genes.gtf \
+		   --sjdbOverhang 100 &
+
+# run STARsolo on CARLIN dataset with mm10 index
+nohup STAR --runThreadN 16 \
+		   --genomeDir /home/yiming/reference/mm10_index \
+		   --readFilesIn /home/yiming/CARLIN/sra/HSC_L_2.fastq /home/yiming/CARLIN/sra/HSC_L_1.fastq \
+		   --soloType Droplet \
+		   --soloCBwhitelist /home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt &
+# Apr 27 16:10:12 ..... started STAR run
+# Apr 27 16:10:13 ..... loading genome
+# Apr 27 16:10:36 ..... started mapping
+# EXITING because of FATAL ERROR in input read file: the total length of barcode sequence is 250 not equal to expected 26
+# Read ID=@SRR11311940.1 ;  Sequence=TTATGCAGGCGCAACTAGAAGGCACAGTCGAGGCTGATCAGCGAGCTCTAGTTAGAATTCTAGCTCCCATCGTCTGCGTGCTACGTATCGACTCCATATCGTCAGCGTCTCGACTCGACTCCATCGCGTGTACGCATACTATCGACTCCATCGCGTGTGCGTACAGTCGCGACTCCATAGTCGACGAGCGCGCTCTCGACTCCATAGCGTGCGCGTATCGTATCGACTCCATAGTCGCTCATAGCGCTCG
+# SOLUTION: check the formatting of input read files.
+# If UMI+CB length is not equal to the barcode read length, specify barcode read length with --soloBarcodeReadLength
+# To avoid checking of barcode read length, specify --soloBarcodeReadLength 0
+# Apr 27 16:10:37 ...... FATAL ERROR, exiting
+
+# STARsolo without BC read
+nohup STAR --runThreadN 16 \
+		   --genomeDir /home/yiming/reference/mm10_index \
+		   --readFilesIn /home/yiming/CARLIN/sra/HSC_L_2.fastq /home/yiming/CARLIN/sra/HSC_L_1.fastq \
+		   --soloType Droplet \
+		   --soloCBwhitelist /home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt \
+		   --soloBarcodeReadLength 0 &
+# Apr 28 16:34:38 ..... started Solo counting
+# Apr 28 16:34:38 ... Starting Solo post-map for Gene
+# Apr 28 16:34:38 ... Finished allocating arrays for Solo 0 GB
+# Apr 28 16:34:38 ... Finished reading reads from Solo files nCB=0, nReadPerCBmax=0, nMatch=0
+# Apr 28 16:34:38 ... Finished collapsing UMIs
+# Solo output directory directory created: ./Solo.out/Gene//raw/
+# Apr 28 16:34:38 ..... finished Solo counting
+#                                Started job on |       Apr 28 16:32:56
+#                            Started mapping on |       Apr 28 16:33:17
+#                                   Finished on |       Apr 28 16:34:38
+#      Mapping speed, Million of reads per hour |       68.63
+#
+#                         Number of input reads |       1544209
+#                     Average input read length |       238
+#                                   UNIQUE READS:
+#                  Uniquely mapped reads number |       14
+#                       Uniquely mapped reads % |       0.00%
+#                         Average mapped length |       227.43
+#                      Number of splices: Total |       26
+#           Number of splices: Annotated (sjdb) |       26
+#                      Number of splices: GT/AG |       26
+#                      Number of splices: GC/AG |       0
+#                      Number of splices: AT/AC |       0
+#              Number of splices: Non-canonical |       0
+#                     Mismatch rate per base, % |       0.50%
+#                        Deletion rate per base |       0.00%
+#                       Deletion average length |       0.00
+#                       Insertion rate per base |       0.03%
+#                      Insertion average length |       1.00
+#                            MULTI-MAPPING READS:
+#       Number of reads mapped to multiple loci |       1
+#            % of reads mapped to multiple loci |       0.00%
+#       Number of reads mapped to too many loci |       0
+#            % of reads mapped to too many loci |       0.00%
+#                                 UNMAPPED READS:
+# Number of reads unmapped: too many mismatches |       0
+#      % of reads unmapped: too many mismatches |       0.00%
+#           Number of reads unmapped: too short |       1541549
+#                % of reads unmapped: too short |       99.83%
+#               Number of reads unmapped: other |       2645
+#                    % of reads unmapped: other |       0.17%
+#                                 CHIMERIC READS:
+#                      Number of chimeric reads |       0
+#                           % of chimeric reads |       0.00%
+
+
+
+# try with another HSC_R sample SRR11311946
+nohup fastq-dump --split-3 SRR11311946 &
+mv SRR11311946_1.fastq HSC_R_S1_L001_R1_001.fastq
+mv SRR11311946_2.fastq HSC_R_S1_L001_R2_001.fastq
+
+nohup cellranger count --id=HSC_R \
+					   --fastqs=/home/yiming/HSC_R/sra/ \
+					   --sample=HSC_R \
+					   --transcriptome=/home/yiming/reference/refdata-gex-mm10-2020-A &
+# [error] Pipestance failed. Error log at:
+# HSC_R/SC_RNA_COUNTER_CS/SC_MULTI_CORE/MULTI_CHEMISTRY_DETECTOR/_GEM_WELL_CHEMISTRY_DETECTOR/DETECT_COUNT_CHEMISTRY/fork0/chnk0-ua0f88e3f09/_errors
+#
+# Log message:
+# An extremely low rate of correct barcodes was observed for all the candidate chemistry choices for the input: Sample HSC_R in "/home/yiming/HSC_R/sra". Please check your input data.
+# - 0.4% for chemistry SC3Pv3
+# - 0.1% for chemistry SC5P-PE
+# - 0.1% for chemistry SC3Pv2
+# - 0.0% for chemistry SC3Pv3LT
+#
+# Waiting 6 seconds for UI to do final refresh.
+# Pipestance failed. Use --noexit option to keep UI running after failure.
+#
+# 2021-05-02 13:56:44 Shutting down.
+
+nohup STAR --runThreadN 16 \
+		   --genomeDir /home/yiming/reference/mm10_index \
+		   --readFilesIn /home/yiming/HSC_R/sra/HSC_R_S1_L001_R1_001.fastq /home/yiming/HSC_R/sra/HSC_R_S1_L001_R2_001.fastq \
+		   --soloType Droplet \
+		   --soloCBwhitelist /home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt &
+# EXITING because of FATAL ERROR in input read file: the total length of barcode sequence is 250 not equal to expected 26
+# Read ID=@SRR11311946.1 ;  Sequence=TCGCTTTCCACTTACGCTTCCGCCTGCCTGCACTCCTTTCGTCGATGTTTTCTTCTCTCCTCGCTCTTGCTTTCTATTCTTCTCTCTTCTCTTCTCTGATCATCTTCGTCTCTCCCTTCTCTTTTCTTTCTTCTTTTCTTTGCTCTTGCGTTGTTTTGTCTTTGTTTCTCTATCTCGTTTTTCGCTGTATCCTTTTCTTCTATTTTTTTTTTTCTCTTTTCTTCTTTCTCTTTCTTTTTTCTCTTTTTTT
+# SOLUTION: check the formatting of input read files.
+# If UMI+CB length is not equal to the barcode read length, specify barcode read length with --soloBarcodeReadLength
+# To avoid checking of barcode read length, specify --soloBarcodeReadLength 0
+# May 02 14:00:16 ...... FATAL ERROR, exiting
+# *** Error in `STAR': corrupted double-linked list: 0x00000000028ea940 ***
+# Segmentation fault
+
+nohup STAR --runThreadN 16 \
+		   --genomeDir /home/yiming/reference/mm10_index \
+		   --readFilesIn /home/yiming/HSC_R/sra/HSC_R_S1_L001_R1_001.fastq /home/yiming/HSC_R/sra/HSC_R_S1_L001_R2_001.fastq \
+		   --soloType Droplet \
+		   --soloCBwhitelist /home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt \
+		   --soloBarcodeReadLength 0 &
+# Number of reads unmapped: too many mismatches |       0
+#      % of reads unmapped: too many mismatches |       0.00%
+#           Number of reads unmapped: too short |       2327251
+#                % of reads unmapped: too short |       99.50%
+#               Number of reads unmapped: other |       11641
+#                    % of reads unmapped: other |       0.50%
+
+
+
+# download the single cell data
+# GSM4413318 EB_FO864_SC_LF_Amplicon SRR11312001
+mkdir sra
+nohup fastq-dump --split-3 SRR11312001 &
+mv SRR11312001_1.fastq EBLF_S1_L001_R1_001.fastq
+mv SRR11312001_2.fastq EBLF_S1_L001_R2_001.fastq
+
+mkdir cellranger_run
+cellranger count --id=EBLF --fastqs=/home/yiming/CARLIN/sra/ --sample=EBLF --transcriptome=/home/yiming/reference/refdata-gex-mm10-2020-A
+# Log message:
+# Unable to distinguish between [SC5P-R2, SC3Pv2] chemistries based on the R2 read mapping for Sample EBLF in "/home/yiming/CARLIN/sra".
+# Total Reads          = 100000
+# Mapped reads         = 0
+# Sense reads          = 0
+# Antisense reads      = 0
+#
+# In order to distinguish between the 3' vs 5' assay configuration the following conditions need to be satisfied:
+# - A minimum of 1000 confidently mapped reads
+# - A minimum of 5.0% of the total reads considered needs to be confidently mapped
+# - The number of sense reads need to be at least 2x compared to the antisense reads or vice versa
+#
+# Please validate the inputs and/or specify the chemistry via the --chemistry argument.
+
+nohup cellranger count --id=EBLF --fastqs=/home/yiming/CARLIN/sra/ --sample=EBLF --transcriptome=/home/yiming/reference/refdata-gex-mm10-2020-A --chemistry SC3Pv2 &
+# Outputs:
+# - Run summary HTML:                         /home/yiming/CARLIN/cellranger_run/EBLF/outs/web_summary.html
+# - Run summary CSV:                          /home/yiming/CARLIN/cellranger_run/EBLF/outs/metrics_summary.csv
+# - BAM:                                      /home/yiming/CARLIN/cellranger_run/EBLF/outs/possorted_genome_bam.bam
+# - BAM index:                                /home/yiming/CARLIN/cellranger_run/EBLF/outs/possorted_genome_bam.bam.bai
+# - Filtered feature-barcode matrices MEX:    /home/yiming/CARLIN/cellranger_run/EBLF/outs/filtered_feature_bc_matrix
+# - Filtered feature-barcode matrices HDF5:   /home/yiming/CARLIN/cellranger_run/EBLF/outs/filtered_feature_bc_matrix.h5
+# - Unfiltered feature-barcode matrices MEX:  /home/yiming/CARLIN/cellranger_run/EBLF/outs/raw_feature_bc_matrix
+# - Unfiltered feature-barcode matrices HDF5: /home/yiming/CARLIN/cellranger_run/EBLF/outs/raw_feature_bc_matrix.h5
+# - Secondary analysis output CSV:            null
+# - Per-molecule read information:            /home/yiming/CARLIN/cellranger_run/EBLF/outs/molecule_info.h5
+# - CRISPR-specific analysis:                 null
+# - Loupe Browser file:                       null
+# - Feature Reference:                        null
+# - Target Panel File:                        null
+#
+# Waiting 6 seconds for UI to do final refresh.
+# Pipestance completed successfully!
+#
+# 2021-05-21 20:41:02 Shutting down.
+
+
+
+# GSM4413319 EB_FO864_SC_RF_Amplicon SRR11312002
+nohup fastq-dump --split-3 SRR11312002 &
+mv SRR11312002_1.fastq EBRF_S1_L001_R1_001.fastq
+mv SRR11312002_2.fastq EBRF_S1_L001_R2_001.fastq
+cellranger count --id=EBRF --fastqs=/home/yiming/CARLIN/sra/ --sample=EBRF --transcriptome=/home/yiming/reference/refdata-gex-mm10-2020-A
+# [error] Pipestance failed. Error log at:
+# EBRF/SC_RNA_COUNTER_CS/SC_MULTI_CORE/MULTI_CHEMISTRY_DETECTOR/_GEM_WELL_CHEMISTRY_DETECTOR/DETECT_COUNT_CHEMISTRY/fork0/chnk0-ue324b08f66/_errors
+#
+# Log message:
+# Unable to distinguish between [SC5P-R2, SC3Pv2] chemistries based on the R2 read mapping for Sample EBRF in "/home/yiming/CARLIN/sra".
+# Total Reads          = 100000
+# Mapped reads         = 0
+# Sense reads          = 0
+# Antisense reads      = 0
+#
+# In order to distinguish between the 3' vs 5' assay configuration the following conditions need to be satisfied:
+# - A minimum of 1000 confidently mapped reads
+# - A minimum of 5.0% of the total reads considered needs to be confidently mapped
+# - The number of sense reads need to be at least 2x compared to the antisense reads or vice versa
+#
+# Please validate the inputs and/or specify the chemistry via the --chemistry argument.
+#
+#
+# Waiting 6 seconds for UI to do final refresh.
+# Pipestance failed. Use --noexit option to keep UI running after failure.
+#
+# 2021-05-28 14:39:41 Shutting down.
+
+cellranger count --id=EBRF --fastqs=/home/yiming/CARLIN/sra/ --sample=EBRF --transcriptome=/home/yiming/reference/refdata-gex-mm10-2020-A --chemistry SC3Pv2
+# Outputs:
+# - Run summary HTML:                         /home/yiming/CARLIN/cellranger_run/EBRF/outs/web_summary.html
+# - Run summary CSV:                          /home/yiming/CARLIN/cellranger_run/EBRF/outs/metrics_summary.csv
+# - BAM:                                      /home/yiming/CARLIN/cellranger_run/EBRF/outs/possorted_genome_bam.bam
+# - BAM index:                                /home/yiming/CARLIN/cellranger_run/EBRF/outs/possorted_genome_bam.bam.bai
+# - Filtered feature-barcode matrices MEX:    /home/yiming/CARLIN/cellranger_run/EBRF/outs/filtered_feature_bc_matrix
+# - Filtered feature-barcode matrices HDF5:   /home/yiming/CARLIN/cellranger_run/EBRF/outs/filtered_feature_bc_matrix.h5
+# - Unfiltered feature-barcode matrices MEX:  /home/yiming/CARLIN/cellranger_run/EBRF/outs/raw_feature_bc_matrix
+# - Unfiltered feature-barcode matrices HDF5: /home/yiming/CARLIN/cellranger_run/EBRF/outs/raw_feature_bc_matrix.h5
+# - Secondary analysis output CSV:            null
+# - Per-molecule read information:            /home/yiming/CARLIN/cellranger_run/EBRF/outs/molecule_info.h5
+# - CRISPR-specific analysis:                 null
+# - Loupe Browser file:                       null
+# - Feature Reference:                        null
+# - Target Panel File:                        null
+#
+# Waiting 6 seconds for UI to do final refresh.
+# Pipestance completed successfully!
+#
+# 2021-05-28 14:50:43 Shutting down.
+
+cellranger count --id=EBRF --fastqs=/home/yiming/CARLIN/sra/ --sample=EBRF --transcriptome=/home/yiming/reference/refdata-gex-mm10-2020-A --chemistry SC5P-R2
+# Outputs:
+# - Run summary HTML:                         /home/yiming/CARLIN/cellranger_run/EBRF/outs/web_summary.html
+# - Run summary CSV:                          /home/yiming/CARLIN/cellranger_run/EBRF/outs/metrics_summary.csv
+# - BAM:                                      /home/yiming/CARLIN/cellranger_run/EBRF/outs/possorted_genome_bam.bam
+# - BAM index:                                /home/yiming/CARLIN/cellranger_run/EBRF/outs/possorted_genome_bam.bam.bai
+# - Filtered feature-barcode matrices MEX:    /home/yiming/CARLIN/cellranger_run/EBRF/outs/filtered_feature_bc_matrix
+# - Filtered feature-barcode matrices HDF5:   /home/yiming/CARLIN/cellranger_run/EBRF/outs/filtered_feature_bc_matrix.h5
+# - Unfiltered feature-barcode matrices MEX:  /home/yiming/CARLIN/cellranger_run/EBRF/outs/raw_feature_bc_matrix
+# - Unfiltered feature-barcode matrices HDF5: /home/yiming/CARLIN/cellranger_run/EBRF/outs/raw_feature_bc_matrix.h5
+# - Secondary analysis output CSV:            null
+# - Per-molecule read information:            /home/yiming/CARLIN/cellranger_run/EBRF/outs/molecule_info.h5
+# - CRISPR-specific analysis:                 null
+# - Loupe Browser file:                       null
+# - Feature Reference:                        null
+# - Target Panel File:                        null
+#
+# Waiting 6 seconds for UI to do final refresh.
+# Pipestance completed successfully!
+#
+# 2021-05-28 15:07:44 Shutting down.
+
+
+
+
+
+# GSM4413324 5FU_FO892_SC_1_Amplicon SRR11312007 SRR11312008
+nohup fastq-dump --split-3 SRR11312007 &
+nohup fastq-dump --split-3 SRR11312008 &
+mv SRR11312007_1.fastq 5FU_FO892_S1_L001_R1_001.fastq
+mv SRR11312007_2.fastq 5FU_FO892_S1_L001_R2_001.fastq
+mv SRR11312008_1.fastq 5FU_FO892_S1_L002_R1_001.fastq
+mv SRR11312008_2.fastq 5FU_FO892_S1_L002_R2_001.fastq
+cellranger count --id=5FU_FO892 --fastqs=/home/yiming/CARLIN/sra/ --sample=5FU_FO892 --transcriptome=/home/yiming/reference/refdata-gex-mm10-2020-A --chemistry SC3Pv3
+# Outputs:
+# - Run summary HTML:                         /home/yiming/CARLIN/cellranger_run/5FU_FO892/outs/web_summary.html
+# - Run summary CSV:                          /home/yiming/CARLIN/cellranger_run/5FU_FO892/outs/metrics_summary.csv
+# - BAM:                                      /home/yiming/CARLIN/cellranger_run/5FU_FO892/outs/possorted_genome_bam.bam
+# - BAM index:                                /home/yiming/CARLIN/cellranger_run/5FU_FO892/outs/possorted_genome_bam.bam.bai
+# - Filtered feature-barcode matrices MEX:    /home/yiming/CARLIN/cellranger_run/5FU_FO892/outs/filtered_feature_bc_matrix
+# - Filtered feature-barcode matrices HDF5:   /home/yiming/CARLIN/cellranger_run/5FU_FO892/outs/filtered_feature_bc_matrix.h5
+# - Unfiltered feature-barcode matrices MEX:  /home/yiming/CARLIN/cellranger_run/5FU_FO892/outs/raw_feature_bc_matrix
+# - Unfiltered feature-barcode matrices HDF5: /home/yiming/CARLIN/cellranger_run/5FU_FO892/outs/raw_feature_bc_matrix.h5
+# - Secondary analysis output CSV:            /home/yiming/CARLIN/cellranger_run/5FU_FO892/outs/analysis
+# - Per-molecule read information:            /home/yiming/CARLIN/cellranger_run/5FU_FO892/outs/molecule_info.h5
+# - CRISPR-specific analysis:                 null
+# - Loupe Browser file:                       /home/yiming/CARLIN/cellranger_run/5FU_FO892/outs/cloupe.cloupe
+# - Feature Reference:                        null
+# - Target Panel File:                        null
+#
+# Waiting 6 seconds for UI to do final refresh.
+# Pipestance completed successfully!
+#
+# 2021-05-28 15:42:16 Shutting down.
+
+
+# GSM4413329 EB_FO864_SC_LF_Transcriptome SRR11312016 SRR11312017 SRR11312018 SRR11312019
+nohup fastq-dump --split-3 SRR11312016 &
+nohup fastq-dump --split-3 SRR11312017 &
+nohup fastq-dump --split-3 SRR11312018 &
+nohup fastq-dump --split-3 SRR11312019 &
+mv SRR11312016_1.fastq EB_FO864_S1_L001_R1_001.fastq
+mv SRR11312016_2.fastq EB_FO864_S1_L001_R2_001.fastq
+cellranger count --id=EB_FO864 --fastqs=/home/yiming/CARLIN/sra/ --sample=EB_FO864 --transcriptome=/home/yiming/reference/refdata-gex-mm10-2020-A --chemistry SC3Pv3
+# [error] Pipestance failed. Error log at:
+# EB_FO864/SC_RNA_COUNTER_CS/SC_MULTI_CORE/MULTI_CHEMISTRY_DETECTOR/_GEM_WELL_CHEMISTRY_DETECTOR/DETECT_COUNT_CHEMISTRY/fork0/chnk0-u3b4cb1cbfb/_errors
+#
+# Log message:
+# You selected chemistry SC3Pv3, which expects the cell barcode sequence in read1.
+# In the input data, an extremely low rate of correct barcodes was observed for this chemistry (9.4%).
+# Please check your input data and chemistry selection. Note: manual chemistry detection is not required in most cases.
+# Input: Sample EB_FO864 in "/home/yiming/CARLIN/sra"
+#
+# Waiting 6 seconds for UI to do final refresh.
+# Pipestance failed. Use --noexit option to keep UI running after failure.
+#
+# 2021-05-29 13:07:26 Shutting down.
+
+cellranger count --id=EB_FO864 --fastqs=/home/yiming/CARLIN/sra/ --sample=EB_FO864 --transcriptome=/home/yiming/reference/refdata-gex-mm10-2020-A
+# Outputs:
+# - Run summary HTML:                         /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/web_summary.html
+# - Run summary CSV:                          /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/metrics_summary.csv
+# - BAM:                                      /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam
+# - BAM index:                                /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam.bai
+# - Filtered feature-barcode matrices MEX:    /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/filtered_feature_bc_matrix
+# - Filtered feature-barcode matrices HDF5:   /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/filtered_feature_bc_matrix.h5
+# - Unfiltered feature-barcode matrices MEX:  /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/raw_feature_bc_matrix
+# - Unfiltered feature-barcode matrices HDF5: /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/raw_feature_bc_matrix.h5
+# - Secondary analysis output CSV:            /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/analysis
+# - Per-molecule read information:            /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/molecule_info.h5
+# - CRISPR-specific analysis:                 null
+# - Loupe Browser file:                       /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/cloupe.cloupe
+# - Feature Reference:                        null
+# - Target Panel File:                        null
+#
+# Waiting 6 seconds for UI to do final refresh.
+# Pipestance completed successfully!
+#
+# 2021-05-29 13:37:54 Shutting down.
+mv SRR11312017_1.fastq EB_FO864_S1_L002_R1_001.fastq
+mv SRR11312017_2.fastq EB_FO864_S1_L002_R2_001.fastq
+mv SRR11312018_1.fastq EB_FO864_S1_L003_R1_001.fastq
+mv SRR11312018_2.fastq EB_FO864_S1_L003_R2_001.fastq
+mv SRR11312019_1.fastq EB_FO864_S1_L004_R1_001.fastq
+mv SRR11312019_2.fastq EB_FO864_S1_L004_R2_001.fastq
+nohup cellranger count --id=EB_FO864 --fastqs=/home/yiming/CARLIN/sra/ --sample=EB_FO864 --transcriptome=/home/yiming/reference/refdata-gex-mm10-2020-A &
+# Outputs:
+# - Run summary HTML:                         /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/web_summary.html
+# - Run summary CSV:                          /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/metrics_summary.csv
+# - BAM:                                      /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam
+# - BAM index:                                /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam.bai
+# - Filtered feature-barcode matrices MEX:    /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/filtered_feature_bc_matrix
+# - Filtered feature-barcode matrices HDF5:   /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/filtered_feature_bc_matrix.h5
+# - Unfiltered feature-barcode matrices MEX:  /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/raw_feature_bc_matrix
+# - Unfiltered feature-barcode matrices HDF5: /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/raw_feature_bc_matrix.h5
+# - Secondary analysis output CSV:            /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/analysis
+# - Per-molecule read information:            /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/molecule_info.h5
+# - CRISPR-specific analysis:                 null
+# - Loupe Browser file:                       /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/cloupe.cloupe
+# - Feature Reference:                        null
+# - Target Panel File:                        null
+#
+# Waiting 6 seconds for UI to do final refresh.
+# Pipestance completed successfully!
+#
+# 2021-05-29 16:39:47 Shutting down.
+
+
+velocyto run -o /home/yiming/CARLIN/velocyto_run /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam /home/yiming/reference/refdata-gex-mm10-2020-A/genes/genes.gtf
+
+
+
+velocyto run /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam /home/yiming/reference/refdata-gex-mm10-2020-A/genes/genes.gtf
+
+velocyto run -b /home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam /home/yiming/reference/refdata-gex-mm10-2020-A/genes/genes.gtf
+/home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt
+
+# 2021-06-01 17:42:51,872 - DEBUG - 2495747 reads were skipped because no apropiate cell or umi barcode was found
+# 2021-06-01 17:42:51,873 - DEBUG - Counting done!
+# 2021-06-01 17:42:52,113 - DEBUG - Generating output file /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/velocyto/possorted_genome_bam_C5WOC.loom
+
+
+/storage/yhhuang/systems/condaEnv/labEnv/bin/velocyto run -b /home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam /home/yiming/reference/refdata-gex-mm10-2020-A/genes/genes.gtf
+/home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt
+
+
+
+
+
+
+
+
+
+
