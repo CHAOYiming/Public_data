@@ -1,0 +1,249 @@
+# single cell pre-processing on AGM sample
+# 2021-4-24
+# CHAO Yiming
+
+# Single-Cell RNA Sequencing Resolves Spatiotemporal Development of Pre-thymic Lymphoid Progenitors and Thymus Organogenesis in Human Embryos
+# GSE133341
+# GSM3906000
+# SRR9602493 SRR9602494 SRR9602495
+
+# download fastq raw data
+nohup fastq-dump --split-3 SRR9602493 &
+
+# rename fastq file
+mv SRR9602493_1.fastq AGM_S1_L001_R1_001.fastq
+mv SRR9602493_2.fastq AGM_S1_L001_R2_001.fastq
+
+# run cellranger count
+nohup cellranger count --id=AGM --fastqs=/home/yiming/AGM/sra/ --sample=AGM --transcriptome=/home/yiming/reference/refdata-gex-GRCh38-2020-A &
+# [error] Pipestance failed. Error log at:
+# AGM/SC_RNA_COUNTER_CS/SC_MULTI_CORE/MULTI_CHEMISTRY_DETECTOR/_GEM_WELL_CHEMISTRY_DETECTOR/DETECT_COUNT_CHEMISTRY/fork0/chnk0-u843387ac2d/_errors
+# Log message:
+# An extremely low rate of correct barcodes was observed for all the candidate chemistry choices for the input: Sample AGM in "/home/yiming/AGM/sra". Please check your input data.
+# - 0.1% for chemistry SC3Pv3
+# - 0.1% for chemistry SC5P-PE
+# - 0.1% for chemistry SC3Pv2
+# - 0.0% for chemistry SC3Pv3LT
+
+
+
+# another try
+
+# Single-Cell RNA Sequencing Resolves Spatiotemporal Development of Pre-thymic Lymphoid Progenitors and Thymus Organogenesis in Human Embryos
+# GSE133341
+# GSM3906001
+# SRR9602496 SRR9602497 SRR9602498 SRR9602499
+
+# download fastq raw data
+nohup fastq-dump --split-3 SRR9602497 &
+
+# rename fastq file
+mv SRR9602497_1.fastq liver_S1_L002_R1_001.fastq
+mv SRR9602497_2.fastq liver_S1_L002_R2_001.fastq
+
+# run cellranger count
+nohup cellranger count --id=liver --fastqs=/home/yiming/liver/sra/ --sample=liver --transcriptome=/home/yiming/reference/refdata-cellranger-GRCh38-3.0.0 &
+# success
+
+# download the web summary file
+# from local machine, set sftp
+get /home/yiming/liver/cellranger_run/liver/outs/web_summary.html /Users/guagua/Downloads
+
+# decompress the expression matrix
+cd /home/yiming/liver/cellranger_run/liver/outs/filtered_feature_bc_matrix
+gunzip barcodes.tsv.gz
+gunzip features.tsv.gz
+gunzip matrix.mtx.gz
+
+# download three matirx files
+get /home/yiming/liver/cellranger_run/liver/outs/filtered_feature_bc_matrix/barcodes.tsv /Users/guagua/Downloads
+get /home/yiming/liver/cellranger_run/liver/outs/filtered_feature_bc_matrix/features.tsv /Users/guagua/Downloads
+get /home/yiming/liver/cellranger_run/liver/outs/filtered_feature_bc_matrix/matrix.mtx /Users/guagua/Downloads
+
+
+# directly working in server [fail]
+R
+library(Matrix)
+matrix_dir = "/home/yiming/liver/cellranger_run/liver/outs/filtered_feature_bc_matrix"
+barcode.path <- paste0(matrix_dir, "barcodes.tsv") 
+features.path <- paste0(matrix_dir, "features.tsv") 
+matrix.path <- paste0(matrix_dir, "matrix.mtx")
+mat <- readMM(file = matrix.path)
+
+
+
+# run STAR alignment on liver sample
+nohup STAR --runThreadN 16 \
+		   --genomeDir /home/yiming/reference/GRCh38_DNA_primary_assembly_index \
+		   --readFilesIn /home/yiming/liver/sra/liver_S1_L002_R1_001.fastq /home/yiming/liver/sra/liver_S1_L002_R2_001.fastq &
+# Apr 26 22:09:47 ..... started STAR run
+# Apr 26 22:09:47 ..... loading genome
+# Apr 26 22:10:10 ..... started mapping
+# Apr 26 22:11:28 ..... finished mapping
+# Apr 26 22:11:33 ..... finished successfully
+#                                Started job on |       Apr 26 22:09:47
+#                            Started mapping on |       Apr 26 22:10:10
+#                                   Finished on |       Apr 26 22:11:33
+#      Mapping speed, Million of reads per hour |       108.95
+#
+#                         Number of input reads |       2511799
+#                     Average input read length |       300
+#                                   UNIQUE READS:
+#                  Uniquely mapped reads number |       674977
+#                       Uniquely mapped reads % |       26.87%
+#                         Average mapped length |       245.66
+#                      Number of splices: Total |       243943
+#           Number of splices: Annotated (sjdb) |       240741
+#                      Number of splices: GT/AG |       241369
+#                      Number of splices: GC/AG |       1065
+#                      Number of splices: AT/AC |       51
+#              Number of splices: Non-canonical |       1458
+#                     Mismatch rate per base, % |       2.73%
+#                        Deletion rate per base |       0.01%
+#                       Deletion average length |       1.64
+#                       Insertion rate per base |       0.01%
+#                      Insertion average length |       1.24
+#                            MULTI-MAPPING READS:
+#       Number of reads mapped to multiple loci |       66765
+#            % of reads mapped to multiple loci |       2.66%
+#       Number of reads mapped to too many loci |       103
+#            % of reads mapped to too many loci |       0.00%
+#                                 UNMAPPED READS:
+# Number of reads unmapped: too many mismatches |       0
+#      % of reads unmapped: too many mismatches |       0.00%
+#           Number of reads unmapped: too short |       1769736
+#                % of reads unmapped: too short |       70.46%
+#               Number of reads unmapped: other |       218
+#                    % of reads unmapped: other |       0.01%
+#                                 CHIMERIC READS:
+#                      Number of chimeric reads |       0
+#                           % of chimeric reads |       0.00%
+
+
+
+# run STARsolo on liver sample
+nohup STAR --runThreadN 16 \
+		   --genomeDir /home/yiming/reference/GRCh38_DNA_primary_assembly_index \
+		   --readFilesIn /home/yiming/liver/sra/liver_S1_L002_R2_001.fastq /home/yiming/liver/sra/liver_S1_L002_R1_001.fastq \
+		   --soloType Droplet &
+# EXITING because of FATAL ERROR in INPUT parameters: --soloCBwhitelist is not defined
+# SOLUTION: in --soloCBwhitelist specify path to and name of the whitelist file, or None for CB demultiplexing without whitelist
+
+
+# liver sample 1
+nohup fastq-dump --split-3 SRR9602496 &
+mv SRR9602496_1.fastq liver_S1_L001_R1_001.fastq
+mv SRR9602496_2.fastq liver_S1_L001_R2_001.fastq
+
+# run cellranger
+cellranger count --id=liver --fastqs=/home/yiming/liver1/sra/ --sample=liver --transcriptome=/home/yiming/reference/refdata-gex-GRCh38-2020-A
+
+# download summary report
+get /home/yiming/liver1/cellranger_run/liver/outs/web_summary.html /Users/guagua/Downloads
+
+# download matrix
+gunzip barcodes.tsv.gz features.tsv.gz matrix.mtx.gz
+get /home/yiming/liver1/cellranger_run/liver/outs/filtered_feature_bc_matrix/barcodes.tsv /Users/guagua/Downloads
+get /home/yiming/liver1/cellranger_run/liver/outs/filtered_feature_bc_matrix/features.tsv /Users/guagua/Downloads
+get /home/yiming/liver1/cellranger_run/liver/outs/filtered_feature_bc_matrix/matrix.mtx /Users/guagua/Downloads
+
+
+# download other two liver samples and rearrange in four lanes
+nohup fastq-dump --split-3 SRR9602498 &
+nohup fastq-dump --split-3 SRR9602499 &
+mv SRR9602498_1.fastq liver_S1_L003_R1_001.fastq
+mv SRR9602498_2.fastq liver_S1_L003_R2_001.fastq
+mv SRR9602499_1.fastq liver_S1_L004_R1_001.fastq
+mv SRR9602499_2.fastq liver_S1_L004_R2_001.fastq
+
+cellranger count --id=liver --fastqs=/home/yiming/liver_sample/sra/ --sample=liver --transcriptome=/home/yiming/reference/refdata-gex-GRCh38-2020-A
+# Waiting 6 seconds for UI to do final refresh.
+# Pipestance completed successfully!
+# 2021-05-04 13:31:06 Shutting down.
+
+# decompress the files and download to local machine
+gunzip barcodes.tsv.gz features.tsv.gz matrix.mtx.gz 
+get /home/yiming/liver_sample/cellranger_run/liver/outs/web_summary.html /Users/guagua/Downloads
+get /home/yiming/liver_sample/cellranger_run/liver/outs/filtered_feature_bc_matrix/barcodes.tsv /Users/guagua/Downloads
+get /home/yiming/liver_sample/cellranger_run/liver/outs/filtered_feature_bc_matrix/features.tsv /Users/guagua/Downloads
+get /home/yiming/liver_sample/cellranger_run/liver/outs/filtered_feature_bc_matrix/matrix.mtx /Users/guagua/Downloads
+
+
+# run velocyto
+velocyto run10x /home/yiming/liver_sample/cellranger_run/liver /home/yiming/reference/refdata-gex-GRCh38-2020-A/genes/genes.gtf
+# ERROR - Can not locate the barcodes.tsv file!
+
+velocyto run10x /home/yiming/liver_sample/cellranger_run/liver/outs /home/yiming/reference/refdata-gex-GRCh38-2020-A/genes/genes.gtf
+# 2021-05-16 19:36:22,456 - ERROR - This is an older version of cellranger, cannot check if the output are ready, make sure of this yourself
+# 2021-05-16 19:36:22,456 - ERROR - Can not locate the barcodes.tsv file!
+
+velocyto run10x /home/yiming/liver_sample/cellranger_run/liver/outs/filtered_feature_bc_matrix /home/yiming/reference/refdata-gex-GRCh38-2020-A/genes/genes.gtf
+# 2021-05-16 19:38:42,529 - ERROR - This is an older version of cellranger, cannot check if the output are ready, make sure of this yourself
+# 2021-05-16 19:38:42,529 - ERROR - Can not locate the barcodes.tsv file!
+
+
+velocyto run /home/yiming/liver_sample/cellranger_run/liver /home/yiming/reference/refdata-gex-GRCh38-2020-A/genes/genes.gtf
+# Usage: velocyto run [OPTIONS] BAMFILE... GTFFILE
+# Try 'velocyto run --help' for help.
+# Error: Invalid value for 'BAMFILE...': File '/home/yiming/liver_sample/cellranger_run/liver' is a directory.
+
+velocyto run /home/yiming/liver_sample/cellranger_run/liver/outs/filtered_feature_bc_matrix/barcodes.tsv /home/yiming/liver_sample/cellranger_run/liver/outs/possorted_genome_bam.bam /home/yiming/reference/refdata-gex-GRCh38-2020-A/genes/genes.gtf
+# 2021-05-16 19:55:40,561 - WARNING - Several input files but --onefilepercell is False. Each bam file will be interpreted as containing a SET of cells!!!
+# 2021-05-16 19:55:40,561 - WARNING - When using mutliple files you may want to use --sampleid option to specify the name of the output file
+# 2021-05-16 19:55:40,561 - INFO - No SAMPLEID specified, the sample will be called multi_input_barcodes_possorted_genome_bam_and_others_E802V (last 5 digits are a random-id to avoid overwriting some other file by mistake)
+# 2021-05-16 19:55:40,561 - INFO - No OUTPUTFOLDER specified, find output files inside /home/yiming/liver_sample/cellranger_run/liver/outs/filtered_feature_bc_matrix/velocyto
+# 2021-05-16 19:55:40,561 - DEBUG - Using logic: Default
+# 2021-05-16 19:55:40,561 - DEBUG - Cell barcodes will be determined while reading the .bam file
+# 2021-05-16 19:55:40,586 - DEBUG - Peeking into /home/yiming/liver_sample/cellranger_run/liver/outs/filtered_feature_bc_matrix/barcodes.tsv
+
+velocyto run /home/yiming/liver_sample/cellranger_run/liver/outs/possorted_genome_bam.bam /home/yiming/reference/refdata-gex-GRCh38-2020-A/genes/genes.gtf
+# forget to set -o output file direction, /home/yiming/liver_sample/cellranger_run/liver/outs/filtered_feature_bc_matrix/velocyto, /home/yiming/liver_sample/cellranger_run/liver/outs/velocyto
+# 2021-05-17 13:40:45,278 - DEBUG - 8138581 reads were skipped because no apropiate cell or umi barcode was found
+
+
+
+
+
+
+
+
+
+velocyto run -o /home/yiming/liver_sample/velocyto_run /home/yiming/liver_sample/cellranger_run/liver/outs/possorted_genome_bam.bam /home/yiming/reference/refdata-gex-GRCh38-2020-A/genes/genes.gtf
+
+nohup velocyto run -o /home/yiming/liver_sample/velocyto_run /home/yiming/liver_sample/cellranger_run/liver/outs/possorted_genome_bam.bam /home/yiming/reference/refdata-gex-GRCh38-2020-A/genes/genes.gtf &
+
+
+/home/yiming/liver_sample/cellranger_run/liver/outs/filtered_feature_bc_matrix
+
+
+/home/yiming/liver_sample/velocyto_run
+
+
+/home/yiming/reference/refdata-gex-GRCh38-2020-A/genes/genes.gtf
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
