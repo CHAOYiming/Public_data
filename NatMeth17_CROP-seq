@@ -1,0 +1,30 @@
+
+# download crop-seq file
+nohup fastq-dump --split-3 SRR5163029 &
+
+# download drop-seq file
+nohup fastq-dump --split-3 SRR5163028 &
+
+# download crop-seq matrix
+wget https://ftp.ncbi.nlm.nih.gov/geo/series/GSE92nnn/GSE92872/suppl/GSE92872_CROP-seq_Jurkat_TCR.digital_expression.csv.gz
+
+# install drop-seq tools
+conda install -c bioconda dropseq_tools
+
+# download code
+wget https://github.com/epigen/crop-seq/archive/refs/tags/final_version.tar.gz
+
+# unzip code
+gunzip final_version.tar.gz
+tar -xvf final_version.tar
+
+# find java file
+find /home/yiming/ -name "picard.jar"
+/home/yiming/.conda/envs/gua/share/dropseq_tools-2.4.0-1/3rdParty/picard/picard.jar
+
+# run drop-seq
+java -jar /home/yiming/.conda/envs/gua/share/dropseq_tools-2.4.0-1/3rdParty/picard/picard.jar CreateSequenceDictionary -REFERENCE /home/yiming/reference/refdata-gex-GRCh38-2020-A/fasta/genome.fa -OUTPUT /home/yiming/crop/drop_result -SPECIES HUMAN
+
+java -jar /home/yiming/.conda/envs/gua/share/dropseq_tools-2.4.0-1/3rdParty/picard/picard.jar CreateSequenceDictionary R=/home/yiming/reference/refdata-gex-GRCh38-2020-A/fasta/genome.fa O=/home/yiming/crop/drop_result 
+SP=HUMAN
+
