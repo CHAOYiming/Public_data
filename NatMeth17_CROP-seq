@@ -28,3 +28,95 @@ java -jar /home/yiming/.conda/envs/gua/share/dropseq_tools-2.4.0-1/3rdParty/pica
 java -jar /home/yiming/.conda/envs/gua/share/dropseq_tools-2.4.0-1/3rdParty/picard/picard.jar CreateSequenceDictionary R=/home/yiming/reference/refdata-gex-GRCh38-2020-A/fasta/genome.fa O=/home/yiming/crop/drop_result 
 SP=HUMAN
 
+--change server storage--
+
+# find java file
+find /usersdata/yiming -name "picard.jar"
+/usersdata/yiming/application/Drop-seq_tools-2.4.0/3rdParty/picard/picard.jar
+
+# convert FASTQ to BAM with Picard
+java -jar /usersdata/yiming/application/Drop-seq_tools-2.4.0/3rdParty/picard/picard.jar -h 
+java -jar /usersdata/yiming/application/Drop-seq_tools-2.4.0/3rdParty/picard/picard.jar CreateSequenceDictionary R=/usersdata/yiming/reference/refdata-gex-GRCh38-2020-A/fasta/genome.fa
+
+java -jar /usersdata/yiming/application/Drop-seq_tools-2.4.0/3rdParty/picard/picard.jar FastqToSam -h
+java -jar /usersdata/yiming/application/Drop-seq_tools-2.4.0/3rdParty/picard/picard.jar FastqToSam F1=/usersdata/yiming/crop/sra/SRR5163029_1.fastq F2=/usersdata/yiming/crop/sra/SRR5163029_2.fastq O=unaligned_read_pairs.bam SM=sample001
+# picard.sam.FastqToSam done. Elapsed time: 13.73 minutes. 
+# Runtime.totalMemory()=11745099776
+# To get help, see http://broadinstitute.github.io/picard/index.html#GettingHelp
+# Exception in thread "main" htsjdk.samtools.util.RuntimeIOException: Problem writing temporary file file:///tmp/yiming/sortingcollection.885339838786208048.tmp.  Try setting TMP_DIR to a file system with lots of space.
+
+# Might help: https://www.biostars.org/p/42613/
+java -jar /usersdata/yiming/application/Drop-seq_tools-2.4.0/3rdParty/picard/picard.jar FastqToSam F1=/usersdata/yiming/crop/sra/SRR5163029_1.fastq F2=/usersdata/yiming/crop/sra/SRR5163029_2.fastq O=unaligned_read_pairs.bam SM=sample001 TMP_DIR=`pwd`/tmp
+# Processed 227621653 fastq reads
+
+# STARsolo alignment
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/reference/GRCh38_DNA_primary_assembly_index --readFilesIn /usersdata/yiming/crop/sra/SRR5163029_1.fastq /usersdata/yiming/crop/sra/SRR5163029_2.fastq --soloType Droplet --soloCBwhitelist None
+# EXITING because of FATAL ERROR in input read file: the total length of barcode sequence is 151 not equal to expected 26
+# Read ID=@SRR5163029.1 ;  Sequence=AATTTGATGTACACAACATTAAAAGTACTGACACCTGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACACAAAAAAAAAATCACATTATAACACAACAAAAAAA
+# SOLUTION: check the formatting of input read files.
+# If UMI+CB length is not equal to the barcode read length, specify barcode read length with --soloBarcodeReadLength
+# To avoid checking of barcode read length, specify --soloBarcodeReadLength 0
+
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/reference/GRCh38_DNA_primary_assembly_index --readFilesIn /usersdata/yiming/crop/sra/SRR5163029_1.fastq /usersdata/yiming/crop/sra/SRR5163029_2.fastq --soloType Droplet --soloCBwhitelist None --soloBarcodeReadLength 12
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/reference/GRCh38_DNA_primary_assembly_index --readFilesIn /usersdata/yiming/crop/sra/SRR5163029_1.fastq /usersdata/yiming/crop/sra/SRR5163029_2.fastq --soloType Droplet --soloCBwhitelist None --soloBarcodeReadLength 0
+
+
+# cellranger
+# upload csv file
+put /Users/guagua/Downloads/crispr_example_feature_ref.csv /usersdata/yiming/crop
+put /Users/guagua/Downloads/library.csv /usersdata/yiming/crop
+
+cp SRR5163029_1.fastq ../cellranger/
+cp SRR5163029_2.fastq ../cellranger/
+mv SRR5163029_1.fastq sample1_S1_L001_R1_001.fastq
+mv SRR5163029_2.fastq sample1_S1_L001_R2_001.fastq
+cellranger count --id=sample1 --libraries=../library.csv --transcriptome=/usersdata/yiming/reference/refdata-gex-GRCh38-2020-A --feature-ref=../feature_ref.csv
+# error: No input FASTQs were found for the requested parameters.
+
+# retry
+cellranger count --id=sample1 --libraries=../library.csv --transcriptome=/usersdata/yiming/reference/refdata-gex-GRCh38-2020-A --feature-ref=../feature_ref.csv
+# [error] Duplicated entry in the input FASTQ data. Please use a unique combination of fastq path and sample name.
+# Path: /usersdata/yiming/crop/cellranger
+# Note in demux mode, a unique combination fastq path, sample indices, and lanes is required.
+
+put /Users/guagua/Downloads/library2.csv /usersdata/yiming/crop
+cellranger count --id=sample1 --libraries=../library2.csv --transcriptome=/usersdata/yiming/reference/refdata-gex-GRCh38-2020-A --feature-ref=../feature_ref.csv
+# [error] You must specify >= 1 input library with either library_type == 'Gene Expression' or library_type == 'Antibody Capture' to run 'cellranger count'
+
+# rename
+put /Users/guagua/Downloads/library3.csv /usersdata/yiming/crop
+cp sample1_S1_L001_R1_001.fastq CRISPR_sample1_S1_L001_R1_001.fastq
+cp sample1_S1_L001_R2_001.fastq CRISPR_sample1_S1_L001_R2_001.fastq
+mv sample1_S1_L001_R1_001.fastq GEX_sample1_S1_L001_R1_001.fastq
+mv sample1_S1_L001_R2_001.fastq GEX_sample1_S1_L001_R2_001.fastq
+cellranger count --id=sample1 --libraries=../library3.csv --transcriptome=/usersdata/yiming/reference/refdata-gex-GRCh38-2020-A --feature-ref=../feature_ref.csv
+# [error] Pipestance failed. Error log at:
+# sample1/SC_RNA_COUNTER_CS/SC_MULTI_CORE/MULTI_CHEMISTRY_DETECTOR/_GEM_WELL_CHEMISTRY_DETECTOR/DETECT_COUNT_CHEMISTRY/fork0/chnk0-u1c8ff881c2/_errors
+# Log message:
+# Duplicate FASTQs found between Sample CRISPR_sample1 in "/usersdata/yiming/crop/cellranger" and Sample GEX_sample1 in "/usersdata/yiming/crop/cellranger"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
