@@ -96,7 +96,8 @@ cellranger count --id=sample1 --libraries=../library3.csv --transcriptome=/users
 # Duplicate FASTQs found between Sample CRISPR_sample1 in "/usersdata/yiming/crop/cellranger" and Sample GEX_sample1 in "/usersdata/yiming/crop/cellranger"
 
 
-
+# dropEst
+./droptag -c ~/dropEst/configs/drop_seq.xml [-S] [-s] ../SRR5163029_1.fastq ../SRR5163029_2.fastq
 
 
 
