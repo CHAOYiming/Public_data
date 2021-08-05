@@ -768,10 +768,7 @@ nohup cellranger count --id=EB_FO864 --fastqs=/home/yiming/CARLIN/sra/ --sample=
 #
 # 2021-05-29 16:39:47 Shutting down.
 
-
 velocyto run -o /home/yiming/CARLIN/velocyto_run /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam /home/yiming/reference/refdata-gex-mm10-2020-A/genes/genes.gtf
-
-
 
 velocyto run /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam /home/yiming/reference/refdata-gex-mm10-2020-A/genes/genes.gtf
 
@@ -782,11 +779,21 @@ velocyto run -b /home/yiming/application/cellranger-6.0.1/lib/python/cellranger/
 # 2021-06-01 17:42:51,873 - DEBUG - Counting done!
 # 2021-06-01 17:42:52,113 - DEBUG - Generating output file /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/velocyto/possorted_genome_bam_C5WOC.loom
 
-
 /storage/yhhuang/systems/condaEnv/labEnv/bin/velocyto run -b /home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt /home/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam /home/yiming/reference/refdata-gex-mm10-2020-A/genes/genes.gtf
 /home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt
 
 
+# install cellsnp-lite
+conda config --add channels bioconda
+conda config --add channels conda-forge
+conda install cellsnp-lite
+
+# Mode 2a: droplet based single cells without given SNPs
+cellsnp-lite -s $BAM -b $BARCODE -O $OUT_DIR -p 22 --minMAF 0.1 --minCOUNT 100 --gzip
+cellsnp-lite -s /usersdata/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam -b /usersdata/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt -O /usersdata/yiming/CARLIN/cellsnp -p 22 --minMAF 0.1 --minCOUNT 100 --gzip
+# [E::csp_pileup] could not parse name for chrom 20.
+
+cellsnp-lite -s /usersdata/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam -b /usersdata/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt -O /usersdata/yiming/CARLIN/cellsnp -p 22 --minMAF 0.1 --minCOUNT 100 --gzip --chrom 17
 
 
 
