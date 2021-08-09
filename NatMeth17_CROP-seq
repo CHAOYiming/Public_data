@@ -60,6 +60,43 @@ STAR --runThreadN 16 --genomeDir /usersdata/yiming/reference/GRCh38_DNA_primary_
 STAR --runThreadN 16 --genomeDir /usersdata/yiming/reference/GRCh38_DNA_primary_assembly_index --readFilesIn /usersdata/yiming/crop/sra/SRR5163029_1.fastq /usersdata/yiming/crop/sra/SRR5163029_2.fastq --soloType Droplet --soloCBwhitelist None --soloBarcodeReadLength 12
 STAR --runThreadN 16 --genomeDir /usersdata/yiming/reference/GRCh38_DNA_primary_assembly_index --readFilesIn /usersdata/yiming/crop/sra/SRR5163029_1.fastq /usersdata/yiming/crop/sra/SRR5163029_2.fastq --soloType Droplet --soloCBwhitelist None --soloBarcodeReadLength 0
 
+                                 Started job on |       Jul 22 02:51:47
+                             Started mapping on |       Jul 22 02:52:11
+                                    Finished on |       Jul 22 04:10:23
+       Mapping speed, Million of reads per hour |       174.65
+
+                          Number of input reads |       227621653
+                      Average input read length |       151
+                                    UNIQUE READS:
+                   Uniquely mapped reads number |       8947294
+                        Uniquely mapped reads % |       3.93%
+                          Average mapped length |       132.26
+                       Number of splices: Total |       2795179
+            Number of splices: Annotated (sjdb) |       2574070
+                       Number of splices: GT/AG |       2637150
+                       Number of splices: GC/AG |       19723
+                       Number of splices: AT/AC |       2167
+               Number of splices: Non-canonical |       136139
+                      Mismatch rate per base, % |       3.04%
+                         Deletion rate per base |       0.02%
+                        Deletion average length |       1.67
+                        Insertion rate per base |       0.01%
+                       Insertion average length |       1.31
+                             MULTI-MAPPING READS:
+        Number of reads mapped to multiple loci |       782187
+             % of reads mapped to multiple loci |       0.34%
+        Number of reads mapped to too many loci |       8760
+             % of reads mapped to too many loci |       0.00%
+                                  UNMAPPED READS:
+  Number of reads unmapped: too many mismatches |       0
+       % of reads unmapped: too many mismatches |       0.00%
+            Number of reads unmapped: too short |       217880899
+                 % of reads unmapped: too short |       95.72%
+                Number of reads unmapped: other |       2513
+                     % of reads unmapped: other |       0.00%
+                                  CHIMERIC READS:
+                       Number of chimeric reads |       0
+                            % of chimeric reads |       0.00%
 
 # cellranger
 # upload csv file
@@ -99,11 +136,123 @@ cellranger count --id=sample1 --libraries=../library3.csv --transcriptome=/users
 # dropEst
 ./droptag -c ~/dropEst/configs/drop_seq.xml [-S] [-s] ../SRR5163029_1.fastq ../SRR5163029_2.fastq
 
+# STARsolo
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/reference/GRCh38_DNA_primary_assembly_index --readFilesIn /usersdata/yiming/crop/sra/SRR5163029_2.fastq /usersdata/yiming/crop/sra/SRR5163029_1.fastq --soloType Droplet --soloCBwhitelist None --soloBarcodeReadLength 0 --soloCBstart 1 --soloCBlen 12 --soloUMIstart 13 --soloUMIlen 8
+
+                                 Started job on |       Aug 06 14:00:40
+                             Started mapping on |       Aug 06 14:01:02
+                                    Finished on |       Aug 06 14:45:44
+       Mapping speed, Million of reads per hour |       305.53
+
+                          Number of input reads |       227621653
+                      Average input read length |       151
+                                    UNIQUE READS:
+                   Uniquely mapped reads number |       111844966
+                        Uniquely mapped reads % |       49.14%
+                          Average mapped length |       144.30
+                       Number of splices: Total |       51237744
+            Number of splices: Annotated (sjdb) |       49505637
+                       Number of splices: GT/AG |       49846228
+                       Number of splices: GC/AG |       275663
+                       Number of splices: AT/AC |       26621
+               Number of splices: Non-canonical |       1089232
+                      Mismatch rate per base, % |       1.74%
+                         Deletion rate per base |       0.01%
+                        Deletion average length |       1.63
+                        Insertion rate per base |       0.01%
+                       Insertion average length |       1.39
+                             MULTI-MAPPING READS:
+        Number of reads mapped to multiple loci |       6671926
+             % of reads mapped to multiple loci |       2.93%
+        Number of reads mapped to too many loci |       55797
+             % of reads mapped to too many loci |       0.02%
+                                  UNMAPPED READS:
+  Number of reads unmapped: too many mismatches |       0
+       % of reads unmapped: too many mismatches |       0.00%
+            Number of reads unmapped: too short |       108996295
+                 % of reads unmapped: too short |       47.88%
+                Number of reads unmapped: other |       52669
+                     % of reads unmapped: other |       0.02%
+                                  CHIMERIC READS:
+                       Number of chimeric reads |       0
+                            % of chimeric reads |       0.00%
+
+# normal STAR
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/reference/GRCh38_DNA_primary_assembly_index --readFilesIn /usersdata/yiming/crop/sra/SRR5163029_2.fastq 
+
+                                 Started job on |       Aug 06 15:38:23
+                             Started mapping on |       Aug 06 15:38:48
+                                    Finished on |       Aug 06 16:55:16
+       Mapping speed, Million of reads per hour |       178.60
+
+                          Number of input reads |       227621653
+                      Average input read length |       151
+                                    UNIQUE READS:
+                   Uniquely mapped reads number |       111844966
+                        Uniquely mapped reads % |       49.14%
+                          Average mapped length |       144.30
+                       Number of splices: Total |       51237744
+            Number of splices: Annotated (sjdb) |       49505637
+                       Number of splices: GT/AG |       49846228
+                       Number of splices: GC/AG |       275663
+                       Number of splices: AT/AC |       26621
+               Number of splices: Non-canonical |       1089232
+                      Mismatch rate per base, % |       1.74%
+                         Deletion rate per base |       0.01%
+                        Deletion average length |       1.63
+                        Insertion rate per base |       0.01%
+                       Insertion average length |       1.39
+                             MULTI-MAPPING READS:
+        Number of reads mapped to multiple loci |       6671926
+             % of reads mapped to multiple loci |       2.93%
+        Number of reads mapped to too many loci |       55797
+             % of reads mapped to too many loci |       0.02%
+                                  UNMAPPED READS:
+  Number of reads unmapped: too many mismatches |       0
+       % of reads unmapped: too many mismatches |       0.00%
+            Number of reads unmapped: too short |       108996295
+                 % of reads unmapped: too short |       47.88%
+                Number of reads unmapped: other |       52669
+                     % of reads unmapped: other |       0.02%
+                                  CHIMERIC READS:
+                       Number of chimeric reads |       0
+                            % of chimeric reads |       0.00%
+
+# install 
+requirements:
+	pip install -r requirements.txt
+makeref:
+	python src/guides_to_ref.py
 
 
+# download one TCR data
+nohup fastq-dump --split-3 SRR5128078 &
+
+# download TCR reference
+wget https://medical-epigenomics.org/papers/datlinger2017/data/genome_refs/hg38_spiked_Tcrlibrary.tar.gz
+gunzip hg38_spiked_Tcrlibrary.tar.gz
+tar -xvf hg38_spiked_Tcrlibrary.tar
+
+# STARsolo alignment with given reference
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/crop/TCRrefer/hg38_spiked_Tcrlibrary --readFilesIn /usersdata/yiming/crop/sra/SRR5128078_2.fastq /usersdata/yiming/crop/sra/SRR5128078_1.fastq --soloType Droplet --soloCBwhitelist None --soloBarcodeReadLength 0 --soloCBstart 1 --soloCBlen 12 --soloUMIstart 13 --soloUMIlen 8
+# EXITING because of FATAL ERROR: Genome version: 20201 is INCOMPATIBLE with running STAR version: 2.7.8a
+# SOLUTION: please re-generate genome from scratch with running version of STAR, or with version: 2.7.4a
+
+# re-generate index with primary assembly DNA and gtf file, and gRNA
+nohup STAR --runThreadN 16 --runMode genomeGenerate --genomeDir /usersdata/yiming/crop/TCRrefer/hg38_spiked_Tcrlibrary --genomeFastaFiles /usersdata/yiming/crop/TCRrefer/hg38_spiked_Tcrlibrary/Homo_sapiens.GRCh38.dna.primary_assembly.fa /usersdata/yiming/crop/TCRrefer/hg38_spiked_Tcrlibrary/gRNA_spikes.fa --sjdbGTFfile /usersdata/yiming/crop/TCRrefer/hg38_spiked_Tcrlibrary/Homo_sapiens.GRCh38.77.gtf /usersdata/yiming/crop/TCRrefer/hg38_spiked_Tcrlibrary/gRNA_spikes.gtf --sjdbOverhang 100 &
+
+# re-generate index with only gRNA
+nohup STAR --runThreadN 16 --runMode genomeGenerate --genomeDir /usersdata/yiming/crop/TCRrefer/hg38_spiked_Tcrlibrary --genomeFastaFiles /usersdata/yiming/crop/TCRrefer/hg38_spiked_Tcrlibrary/gRNA_spikes.fa --sjdbGTFfile /usersdata/yiming/crop/TCRrefer/hg38_spiked_Tcrlibrary/gRNA_spikes.gtf --sjdbOverhang 100 &
+
+# align with only guide
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/crop/TCRrefer/guideref --readFilesIn /usersdata/yiming/crop/sra/SRR5128078_2.fastq /usersdata/yiming/crop/sra/SRR5128078_1.fastq --soloType Droplet --soloCBwhitelist None --soloBarcodeReadLength 0 --soloCBstart 1 --soloCBlen 12 --soloUMIstart 13 --soloUMIlen 8
+
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/crop/TCRrefer/hg38_spiked_Tcrlibrary --readFilesIn /usersdata/yiming/crop/sra/SRR5128078_2.fastq /usersdata/yiming/crop/sra/SRR5128078_1.fastq --soloType Droplet --soloCBwhitelist None --soloBarcodeReadLength 0 --soloCBstart 1 --soloCBlen 12 --soloUMIstart 13 --soloUMIlen 8
 
 
-
+# install crop codes
+# ERROR: Could not find a version that satisfies the requirement looper (unavailable) (from versions: 1.2.0, 1.2.1, 1.3.0, 1.3.1)
+# ERROR: No matching distribution found for looper (unavailable)
 
 
 
