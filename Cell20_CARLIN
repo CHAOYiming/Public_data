@@ -797,8 +797,13 @@ cellsnp-lite -s /usersdata/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_
 # no SNPs calling
 
 # set lower Minimum aggragated count at [20]
-cellsnp-lite -s /usersdata/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam -b /usersdata/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt -O /usersdata/yiming/CARLIN/cellsnp2 -p 22 --minMAF 0.1 --minCOUNT 20 --gzip --chrom 17
+cellsnp-lite -s /usersdata/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam -b /usersdata/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt -O /usersdata/yiming/CARLIN/cellsnp -p 22 --minMAF 0.1 --minCOUNT 20 --gzip --chrom 17
 # no SNPs calling
+
+cellsnp-lite -s /usersdata/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam -b /usersdata/yiming/CARLIN/cellranger_run/EB_FO864/outs/filtered_feature_bc_matrix/barcodes.tsv -O /usersdata/yiming/CARLIN/cellsnp3 -p 22 --minMAF 0.1 --minCOUNT 20 --gzip --chrom chr17
+
+# want to tag CB with SNPs
+cellsnp-lite -s /usersdata/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam -b /usersdata/yiming/CARLIN/cellranger_run/EB_FO864/outs/filtered_feature_bc_matrix/barcodes.tsv -O /usersdata/yiming/CARLIN/cellsnp4 -p 22 --minMAF 0.1 --minCOUNT 20 --gzip --chrom chr17 --cellTAG CB
 
 
 
