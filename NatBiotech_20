@@ -1,0 +1,219 @@
+####################################
+# RNA-seq downstream analysis
+# Paper: CAR-Macrophage
+# Dataset: GSE120086
+# 2021-7-1 Yiming
+####################################
+
+
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("DESeq2")
+install.packages("ggpubr")
+
+
+library(DESeq2)
+
+
+rm(list = ls())
+setwd("/Users/guagua/Downloads")
+
+
+gene_counts <- read.table(file = "GSE120086_Raw_read_counts_challengeData.txt", header = T)
+
+metadata <- data.frame(sample_id = colnames(gene_counts)[-1])
+sample <- rep(c("CAR_M","UTD_M"),each=2)
+treatment <- rep(c("IL13","IL4","media"),each=4)
+metadata$sample <- relevel(factor(sample),"CAR_M")
+metadata$treatment <- relevel(factor(treatment),"IL13")
+
+
+# any(duplicated(rownames(gene_counts)))
+
+# which(duplicated(rownames(gene_counts)))
+
+# rownames(gene_counts) = make.names(gene_counts$refGene, unique=TRUE)
+
+# rn = rownames(gene_counts)
+# rn[duplicated(rn)]
+
+gene_counts$refGene <- make.unique(as.character(gene_counts$refGene))
+
+dds <-DESeqDataSetFromMatrix(countData=gene_counts, 
+                             colData=metadata, 
+                             design=~sample*treatment,
+                             tidy=TRUE)
+
+# filter gene_counts>1
+dds2 <- dds[rowSums(counts(dds))>1,]
+
+# sample clustering
+vsd <- vst(dds2, blind = FALSE)
+sampleDists <- dist(t(assay(vsd)))
+hc <- hclust(sampleDists, method = "ward.D2")
+plot(hc, hang = -1)
+
+# beautification
+library(factoextra)
+res <- hcut(sampleDists, k = 2, stand = TRUE)
+fviz_dend(res, rect = TRUE, rect_border="cluster", rect_lty=2, lwd=1.2, rect_fill = T, cex = 1, color_labels_by_k=T, horiz=T)
+
+# calculate DESeq2
+dds <- DESeq(dds2)
+normalized_counts <- as.data.frame(counts(dds, normalized=TRUE))
+plotCounts(dds, gene = "STAT3", intgroup=c("sample"))
+
+# beautification
+library(ggplot2)
+
+check <- c("CCL22","CD163","CSF1R","PPARG","IL12A","TAP1","IL6","CD68","CD80","IL1A","TLR2")
+
+plotdata <- plotCounts(dds, gene = "MX1", intgroup=c("sample"),returnData = T)
+ggplot(plotdata,aes(x=sample,y=count,col=sample))+
+        geom_point()+
+        theme_bw()+
+        ggtitle("MX1")
+
+
+
+# logFC
+contrast <- c("sample", "CAR_M","UTD_M")
+dd1 <- results(dds, contrast=contrast, alpha = 0.05)
+summary(dd1, alpha = 0.05)
+
+plotMA(dd1, ylim=c(-10,10))+
+
+
+library(ggpubr)
+ggmaplot(dd1, 
+         fdr = 0.05, fc = 2, size = 1.0,
+         palette = c("#B31B21", "#1465AC", "darkgray"),
+         genenames = as.vector(res$gene_id),
+         legend = "top", top = 20,
+         font.label = c("bold", 11),
+         font.legend = "bold",
+         font.main = "bold",
+         ggtheme = ggplot2::theme_minimal())
+
+
+# DGE results
+library(dplyr)
+library(tibble)
+res <- dd1 %>% 
+  data.frame() %>% 
+  rownames_to_column("gene_id")
+
+checkM <- data.frame(normalized_counts[check, ])
+ggplot(checkM,aes(x=sample,y=count,col=sample))+
+  geom_point()+
+  theme_bw()+
+  ggtitle("CCL22")
+
+## use melt to modify the format of the data frame
+library(reshape)
+melted_checkM <- melt(checkM)
+melted_checkM$gene <- rep(check,each=1)
+melted_checkM$sampletype <- rep(c("CAR_M","UTD_M"),each=22)
+melted_checkM$treatment <- rep(c("IL13","IL4","CTL"),each=44)
+
+## add column names that make sense
+colnames(melted_checkM) <- c("sample", "counts", "gene", "sampletype","treatment")
+
+# visualization
+ggplot(melted_checkM) +
+  geom_point(aes(x=gene,y=counts,col=sample), position=position_jitter(w=0.1,h=0)) +
+  scale_y_log10() +
+  xlab("Genes") +
+  ylab("Normalized Counts") +
+  ggtitle("M1/M2 marker gene expression") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(plot.title=element_text(hjust=0.5))
+
+ggplot(melted_checkM) +
+  geom_point(aes(x=gene,y=counts,col=sampletype), position=position_jitter(w=0.1,h=0)) +
+  scale_y_log10() +
+  xlab("Genes") +
+  ylab("Normalized Counts") +
+  ggtitle("M1/M2 marker gene expression") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(plot.title=element_text(hjust=0.5))
+
+ggplot(melted_checkM) +
+  geom_point(aes(x=gene,y=counts,col=treatment), position=position_jitter(w=0.1,h=0)) +
+  scale_y_log10() +
+  xlab("Genes") +
+  ylab("Normalized Counts") +
+  ggtitle("M1/M2 marker gene expression") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(plot.title=element_text(hjust=0.5))
+
+# volcano 
+with(res, plot(log2FoldChange, -log10(pvalue), pch=20, main="Volcano plot", xlim=c(-2,2), ylim=c(0,20)))
+with(subset(res, padj<.05 ), points(log2FoldChange, -log10(pvalue), pch=20, col="red"))
+
+with(res, plot(log2FoldChange, baseMean, pch = 20,  main="MAplot", cex = 0.8, log = "y", xlim=c(-8.5,8.5)))
+with(subset(res, padj < 0.0001), points(log2FoldChange,baseMean,  col = "grey",pch = 20))
+with(subset(res, abs(log2FoldChange)>2), points(log2FoldChange, baseMean, pch=20, col="orange"))
+with(subset(res, padj<0.0001 & abs(log2FoldChange)>4), points(log2FoldChange, baseMean,  pch=20, col="red"))
+
+
+# heatmap
+library(gplots)
+heatmap.2(data.matrix(res))
+
+heatmap.2(data.matrix(gene_counts),scale="column",col=bluered(20),trace = "none",density.info = "none")
+
+res_ordered <- res[order(res$padj), ]
+# top50 <- rownames(res_ordered[1:50,])
+top100 <- res_ordered[1:100,1]
+topcounts <- gene_counts[top50,]
+
+
+
+
+# geneList <- as.data.frame(res$log2FoldChange)
+# names(geneList) = res$gene_id
+# geneList = sort(geneList, decreasing = TRUE)
+# genelist <- as.data.frame(geneList)
+
+# GSEA analysis
+library(clusterProfiler)
+library(org.Hs.eg.db)
+
+gseaKEGG <- gseKEGG(geneList     = genediff$ENTREZID,
+                    organism     = 'hsa',
+                    pvalueCutoff = 0.05)
+
+dotplot(gseaKEGG,showCategory=12,split=".sign")+facet_grid(~.sign)
+
+
+genediff<- bitr(top100,fromType="SYMBOL",toType=c("ENTREZID","SYMBOL"),OrgDb=org.Hs.eg.db)
+kk.diff <- enrichKEGG(gene         = genediff$ENTREZID,
+                      organism     = 'hsa',
+                      pvalueCutoff = 0.01)
+head(kk.diff)[,1:6]
+dotplot(kk.diff)
+
+go.all<- enrichGO(genediff$ENTREZID, 
+                  OrgDb = org.Hs.eg.db, 
+                  ont='ALL', #ont='BP'
+                  pAdjustMethod = 'BH',
+                  pvalueCutoff = 0.01, 
+                  qvalueCutoff = 0.2,
+                  keyType = 'ENTREZID')
+dotplot(go.all,showCategory = 10, size = NULL,font.size = 12, title = "GO enrichment", split = "ONTOLOGY") + facet_grid(ONTOLOGY ~ ., scales = "free")
+
+
+gseaKEGG <- gseKEGG(geneList     = genediff$ENTREZID,
+                    organism     = 'hsa',
+                    pvalueCutoff = 0.05)
+
+
+
+
+
+
+
