@@ -1,0 +1,63 @@
+# sc analysis tutorial from Sanger Institute
+# 2020-12
+# CHAO Yiming
+
+
+# create the folder
+mkdir fastqc_results
+mkdir trimmed_results
+mkdir fastqc_trimmed_results
+
+# download two samples raw fastq data (pair-end)
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR523/ERR523111/ERR523111_1.fastq.gz ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR523/ERR523111/ERR523111_2.fastq.gz
+wget ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR523/ERR523122/ERR523122_1.fastq.gz ftp://ftp.sra.ebi.ac.uk/vol1/fastq/ERR523/ERR523122/ERR523122_2.fastq.gz
+
+# decompress the fastq file
+gzip -d ERR523111_1.fastq.gz ERR523111_2.fastq.gz ERR523122_1.fastq.gz ERR523122_2.fastq.gz
+
+# quality comtrol
+fastqc ERR523111_1.fastq ERR523111_2.fastq ERR523122_1.fastq ERR523122_2.fastq
+
+# trim the sequences and adaptors
+trim_galore --nextera ERR523111_1.fastq ERR523111_2.fastq -o trimmed_results --paired
+trim_galore --nextera ERR523122_1.fastq ERR523122_2.fastq -o trimmed_results --paired
+
+# quality control again
+
+# download reference genome fasta data
+wget ftp://ftp.ensembl.org/pub/release-102/fasta/mus_musculus/dna/Mus_musculus.GRCm38.dna.toplevel.fa.gz
+
+# decompress the fasta file
+gzip -d Mus_musculus.GRCm38.dna.toplevel.fa.gz
+
+# build index with hisat2
+
+# sequence alignment with hisat2
+hisat2 -x ../sc/index/Mus_genome -1 trimmed_results/ERR523111_1_val_1.fq -2 trimmed_results/ERR523111_2_val_2.fq -S ERR523111.sam -p 16
+hisat2 -x ../sc/index/Mus_genome -1 trimmed_results/ERR523122_1_val_1.fq -2 trimmed_results/ERR523122_2_val_2.fq -S ERR523122.sam -p 16
+
+# convert SAM file into BAM file
+samtools view -S ERR523111.sam -b > ERR523111.bam
+samtools view -S ERR523122.sam -b > ERR523122.bam
+
+# sort
+samtools sort ERR523111.bam -o ERR523111.sorted.bam
+samtools sort ERR523122.bam -o ERR523122.sorted.bam
+
+# index
+samtools index ERR523111.sorted.bam
+samtools index ERR523122.sorted.bam
+
+# flagstat
+samtools flagstat ERR523111.sorted.bam > ERR523111.flagstat
+samtools flagstat ERR523122.sorted.bam > ERR523122.flagstat
+
+# convert into gene counts
+featureCounts -T 16 -t exon -g gene_name -a ../sc/Mus_musculus.GRCm38.102.gtf -o ERR523111_featurecounts.txt ERR523111.sorted.bam
+featureCounts -T 16 -t exon -g gene_name -a ../sc/Mus_musculus.GRCm38.102.gtf -o ERR523122_featurecounts.txt ERR523122.sorted.bam
+
+# select the colomn with gene name and gene counts
+cat ERR523111_featurecounts.txt | cut -f1,7- > ERR523111_counts.txt
+cat ERR523122_featurecounts.txt | cut -f1,7- > ERR523122_counts.txt
+
+# download the txt file and analyze in R
