@@ -60,9 +60,6 @@ STAR --runThreadN 16 --genomeDir /usersdata/yiming/reference/GRCh38_DNA_primary_
 STAR --runThreadN 16 --genomeDir /usersdata/yiming/reference/GRCh38_DNA_primary_assembly_index --readFilesIn /usersdata/yiming/crop/sra/SRR5163029_1.fastq /usersdata/yiming/crop/sra/SRR5163029_2.fastq --soloType Droplet --soloCBwhitelist None --soloBarcodeReadLength 12
 STAR --runThreadN 16 --genomeDir /usersdata/yiming/reference/GRCh38_DNA_primary_assembly_index --readFilesIn /usersdata/yiming/crop/sra/SRR5163029_1.fastq /usersdata/yiming/crop/sra/SRR5163029_2.fastq --soloType Droplet --soloCBwhitelist None --soloBarcodeReadLength 0
 
-                                 Started job on |       Jul 22 02:51:47
-                             Started mapping on |       Jul 22 02:52:11
-                                    Finished on |       Jul 22 04:10:23
        Mapping speed, Million of reads per hour |       174.65
 
                           Number of input reads |       227621653
