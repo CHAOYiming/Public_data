@@ -224,6 +224,229 @@ nohup velocyto run -o /home/yiming/liver_sample/velocyto_run /home/yiming/liver_
 
 
 
+####################################
+# Single cell RNA-seq downstream analysis
+# Paper: Single-Cell RNA Sequencing Resolves Spatiotemporal Development of Pre-thymic Lymphoid Progenitors and Thymus Organogenesis in Human Embryos
+# Dataset: GSE133341_GSM3906001_SRR*4
+# 2021-4-25 Yiming
+####################################
+
+install.packages('Seurat')
+installed.packages('patchwork')
+reticulate::py_install(packages ='umap-learn')
+install.packages("scSorter")
+BiocManager::install("destiny")
+install.packages("plotly")
+
+
+
+library(Matrix)
+library(dplyr)
+library(Seurat)
+library(patchwork)
+library(scSorter)
+library(destiny)
+library(plotly)
+
+
+rm(list = ls())
+setwd("/usersdata/yiming/liver_sample/cellranger_run/liver/outs/filtered_feature_bc_matrix")
+
+# construct matrix after cellranger
+
+mat <- readMM(file = "matrix.mtx")
+
+feature.names = read.delim("features.tsv",
+                           header = FALSE,
+                           stringsAsFactors = FALSE)
+barcode.names = read.delim("barcodes.tsv",
+                           header = FALSE,
+                           stringsAsFactors = FALSE)
+
+colnames(mat) = barcode.names $ V1
+rownames(mat) = feature.names $ V2
+
+# setup Seurat object
+
+# Initialize the Seurat object with the raw (non-normalized data).
+liver <- CreateSeuratObject(counts = mat, project = "liver", min.cells = 3, min.features = 100)
+liver
+
+# quality control
+# The [[ operator can add columns to object metadata. This is a great place to stash QC stats
+liver[["percent.mt"]] <- PercentageFeatureSet(liver, pattern = "^MT-")
+
+# Visualize QC metrics as a violin plot
+VlnPlot(liver, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+
+# FeatureScatter is typically used to visualize feature-feature relationships, but can be used
+# for anything calculated by the object, i.e. columns in object metadata, PC scores etc.
+plot1 <- FeatureScatter(liver, feature1 = "nCount_RNA", feature2 = "percent.mt")
+plot2 <- FeatureScatter(liver, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+plot1 + plot2
+
+liver <- subset(liver, subset = nFeature_RNA > 200 & nFeature_RNA < 4000 & percent.mt < 5)
+
+# normalization 
+liver <- NormalizeData(liver, normalization.method = "LogNormalize", scale.factor = 10000)
+
+liver <- FindVariableFeatures(liver, selection.method = "vst", nfeatures = 2000)
+
+# Identify the 10 most highly variable genes
+top10 <- head(VariableFeatures(liver), 10)
+
+# plot variable features with and without labels
+plot1 <- VariableFeaturePlot(liver)
+plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
+plot1 + plot2
+
+# scaling data
+all.genes <- rownames(liver)
+liver <- ScaleData(liver, features = all.genes)
+
+# dimension reduction
+liver <- RunPCA(liver, features = VariableFeatures(object = liver))
+
+# Examine and visualize PCA results a few different ways
+print(liver[["pca"]], dims = 1:5, nfeatures = 5)
+
+VizDimLoadings(liver, dims = 1:2, reduction = "pca")
+
+DimPlot(liver, reduction = "pca")
+
+DimHeatmap(liver, dims = 1, cells = 500, balanced = TRUE)
+DimHeatmap(liver, dims = 1:15, cells = 500, balanced = TRUE)
+
+
+
+
+# cell clusters
+liver <- FindNeighbors(liver, dims = 1:10)
+liver <- FindClusters(liver, resolution = 0.5)
+
+# Look at cluster IDs of the first 5 cells
+head(Idents(liver), 5)
+
+
+# UMAP
+liver <- RunUMAP(liver, dims = 1:10)
+DimPlot(liver, reduction = "umap")
+
+# tSNE visualization
+set.seed(1)
+liver <- RunTSNE(liver, reduction = "pca", dims = 1:20, dim.embed=3)
+dim(liver@reductions$tsne)
+
+tmp.tsne.3<-Embeddings(object = liver[["tsne"]])
+cb_palette <- c("#ed1299", "#09f9f5", "#246b93", "#cc8e12", "#d561dd", "#c93f00", "#ddd53e","#4aef7b", 
+                "#e86502", "#9ed84e", "#39ba30", "#6ad157", "#8249aa", "#99db27", "#e07233", "#ff523f",
+                "#ce2523", "#f7aa5d", "#cebb10", "#03827f", "#931635", "#373bbf", "#a1ce4c", "#ef3bb6", 
+                "#d66551","#1a918f", "#ff66fc", "#2927c4", "#7149af" ,"#57e559" ,"#8e3af4" ,"#f9a270" ,
+                "#22547f", "#db5e92","#edd05e", "#6f25e8", "#0dbc21", "#280f7a", "#6373ed", "#5b910f" ,
+                "#7b34c1" ,"#0cf29a","#d80fc1","#dd27ce", "#07a301", "#167275", "#391c82", "#2baeb5",
+                "#925bea", "#63ff4f")
+
+cb_palette.use <- cb_palette[1:length(unique(liver$seurat_clusters))]
+col_match <- data.frame(cluster=unique(liver$seurat_clusters),col=cb_palette.use)
+col_draw<- col_match[match(liver$seurat_clusters,col_match[,1]),2]
+
+tmp.tsne.3 <- as.data.frame(tmp.tsne.3)
+fig <- plot_ly(tmp.tsne.3, x = ~tSNE_1, y = ~tSNE_2, z = ~tSNE_3, color =liver$seurat_clusters, colors = cb_palette.use,size=2)
+fig
+
+
+# differential expression
+
+# find all markers of cluster 2
+cluster2.markers <- FindMarkers(liver, ident.1 = 2, min.pct = 0.25)
+head(cluster2.markers, n = 5)
+
+# find all markers distinguishing cluster 1 from clusters 0 and 2
+cluster1.markers <- FindMarkers(liver, ident.1 = 1, ident.2 = c(0, 2), min.pct = 0.25)
+head(cluster1.markers, n = 5)
+
+# find markers for every cluster compared to all remaining cells, report only the positive ones
+liver.markers <- FindAllMarkers(liver, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+liver.markers %>% group_by(cluster) %>% top_n(n = 2, wt = avg_log2FC)
+
+cluster0.markers <- FindMarkers(liver, ident.1 = 0, logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+VlnPlot(liver, features = c("HBB", "HBM","SPINK2","HBD","ARL6IP1","MPO","C1QB","JCHAIN","IGFBP3","HBZ","CD34","PRDX2","NPM1","PPBP","CRHBP","CD14","	
+PLN","RBP7"))
+
+FeaturePlot(liver, features = c("CD34","MYB","IL7R","CD7","LEF1","TCF7"))
+FeaturePlot(liver, features = c("HBB", "HBM","SPINK2","HBD","ARL6IP1","MPO","C1QB","JCHAIN","IGFBP3","HBZ","CD34","PRDX2","NPM1","PPBP","CRHBP","CD14","MYL7","RBP7"))
+
+top10 <- liver.markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log2FC)
+DoHeatmap(liver, features = top10$gene) + NoLegend()
+
+
+# assigning cell type
+
+new.cluster.ids <- c("Hepatocytes", "Hepatic stellate cells", "Kupffer cells", "Liver sinusoidal endothelial cells", "Platelet","T","B","Monocyte","Red blood cells","Macrophages","hematopoietic stem cells","Fibroblast","white blood cells")
+names(new.cluster.ids) <- levels(liver)
+liver <- RenameIdents(liver, new.cluster.ids)
+DimPlot(liver, reduction = "umap", label = TRUE, pt.size = 0.5) + NoLegend()
+
+
+# diffusion map after log normalization
+
+as.data.frame(liver, genes = Seurat::VariableFeatures(liver))
+
+liver_matrix <- as.matrix(liver@assays[["RNA"]]@counts)
+dm <- DiffusionMap(liver_matrix)
+
+
+
+
+
+
+library(clusterProfiler)
+library(ggplot2)
+library(org.Hs.eg.db)
+
+top10 <- head(VariableFeatures(liver), 10)
+top20 <- head(VariableFeatures(liver), 20)
+top30 <- head(VariableFeatures(liver), 30)
+top50 <- head(VariableFeatures(liver), 50)
+top75 <- head(VariableFeatures(liver), 75)
+
+genelist <- matrix(top75, ncol=1)
+genelist <- as.table(genelist)
+genelist2<- bitr(genelist,fromType="SYMBOL",toType=c("ENTREZID","GENENAME"),OrgDb=org.Hs.eg.db)
+
+go.all<- enrichGO(gene=genelist2$ENTREZID, 
+                  OrgDb = org.Hs.eg.db, 
+                  ont='ALL', #ont='BP'
+                  pAdjustMethod = 'BH',
+                  pvalueCutoff = 0.01, 
+                  qvalueCutoff = 0.2,
+                  keyType = 'ENTREZID')
+
+dotplot(go.all,showCategory = 10, size = NULL,font.size = 12, title = "GO enrichment", split = "ONTOLOGY") + facet_grid(ONTOLOGY ~ ., scales = "free")
+
+heatplot(go.all)
+
+kk.diff <- enrichKEGG(gene         = genelist2$ENTREZID,
+                      organism     = 'hsa',
+                      pvalueCutoff = 0.01,
+                      qvalueCutoff = 0.2 )
+
+dotplot(kk.diff,
+        showCategory = 20,
+        size = NULL,
+        font.size = 12,
+        title = "KEGG pathway analysis",
+        split = NULL)
+
+
+
+
+
+
+
+
+
 
 
 
