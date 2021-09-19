@@ -808,6 +808,40 @@ cellsnp-lite -s /usersdata/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_
 # mouse col1a1 gene should be on chromosome 11
 cellsnp-lite -s /usersdata/yiming/CARLIN/cellranger_run/EB_FO864/outs/possorted_genome_bam.bam -b /usersdata/yiming/CARLIN/cellranger_run/EB_FO864/outs/filtered_feature_bc_matrix/barcodes.tsv -O /usersdata/yiming/CARLIN/cellsnp5 -p 22 --minMAF 0.1 --minCOUNT 20 --gzip --chrom chr11
 
+# download and visualize with IGV
+sftp> get /usersdata/yiming/CARLIN/cellsnp3/cellSNP.base.vcf /Users/guagua/Downloads
+
+# need bam files as genotypes, bai files as index
+# sort bam by chromosomes
+conda install -c bioconda bamtools
+bamtools split -in possorted_genome_bam.bam -reference
+get /usersdata/yiming/CARLIN/cellsnp3/bam/possorted_genome_bam.REF_chr17.bam /Users/guagua/Downloads
+get /usersdata/yiming/CARLIN/cellsnp3/bam/possorted_genome_bam.bam.bai /Users/guagua/Downloads
+get /usersdata/yiming/CARLIN/cellsnp3/bam/possorted_genome_bam.bam /Users/guagua/Downloads
+
+# download snps on chr11
+gunzip cellsnp5/cellSNP.base.vcf.gz
+get /usersdata/yiming/CARLIN/cellsnp5/cellSNP.base.vcf /Users/guagua/Downloads
+
+# download sc_amplicon fastq file
+nohup fastq-dump --split-3 SRR11312001 &
+get /usersdata/yiming/CARLIN/sra_amp/SRR11312001_1.fastq /Users/guagua/Downloads
+get /usersdata/yiming/CARLIN/sra_amp/SRR11312001_2.fastq /Users/guagua/Downloads
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
