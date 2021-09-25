@@ -828,10 +828,17 @@ nohup fastq-dump --split-3 SRR11312001 &
 get /usersdata/yiming/CARLIN/sra_amp/SRR11312001_1.fastq /Users/guagua/Downloads
 get /usersdata/yiming/CARLIN/sra_amp/SRR11312001_2.fastq /Users/guagua/Downloads
 
+# download codes from gitlab
 
+# fastqc and trim read2
+# --small_rna
 
+# customized reference genome with gatk 
+# https://gatk.broadinstitute.org/hc/en-us/articles/360035531652-FASTA-Reference-genome-format
+conda install -c bioconda gatk
 
-
+# upload fasta file
+put /Users/guagua/Downloads/amp_ref.fasta /usersdata/yiming/CARLIN/sra_amp/
 
 
 
