@@ -840,7 +840,112 @@ conda install -c bioconda gatk
 # upload fasta file
 put /Users/guagua/Downloads/amp_ref.fasta /usersdata/yiming/CARLIN/sra_amp/
 
-STAR 
+# STAR alignment
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref --readFilesIn /usersdata/yiming/CARLIN/sra_amp/SRR11312001_2_trimmed.fq
+# Sep 25 12:48:15 ..... started STAR run
+# Sep 25 12:48:15 ..... loading genome
+# EXITING because of FATAL ERROR: could not open genome file /usersdata/yiming/CARLIN/amp_ref//genomeParameters.txt
+# SOLUTION: check that the path to genome files, specified in --genomeDir is correct and the files are present, and have user read permsissions
+# Sep 25 12:48:15 ...... FATAL ERROR, exiting
+
+# generate genome
+STAR --runThreadN 16 --runMode genomeGenerate --genomeDir /usersdata/yiming/CARLIN/amp_ref --genomeFastaFiles /usersdata/yiming/CARLIN/amp_ref/amp_ref.fasta
+--sjdbGTFfile /home/yiming/reference/GRCh38_DNA_primary_assembly_index/Homo_sapiens.GRCh38.103.gtf --sjdbOverhang 100 &
+# Sep 25 12:54:22 ..... finished successfully
+
+# STAR alignment
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref --readFilesIn /usersdata/yiming/CARLIN/sra_amp/SRR11312001_2_trimmed.fq
+# Sep 25 12:55:57 ..... finished successfully
+                                 Started job on |       Sep 25 12:55:28
+                             Started mapping on |       Sep 25 12:55:29
+                                    Finished on |       Sep 25 12:55:57
+       Mapping speed, Million of reads per hour |       24.99
+
+                          Number of input reads |       194401
+                      Average input read length |       293
+                                    UNIQUE READS:
+                   Uniquely mapped reads number |       67346
+                        Uniquely mapped reads % |       34.64%
+                          Average mapped length |       247.37
+                       Number of splices: Total |       182
+            Number of splices: Annotated (sjdb) |       0
+                       Number of splices: GT/AG |       1
+                       Number of splices: GC/AG |       0
+                       Number of splices: AT/AC |       0
+               Number of splices: Non-canonical |       181
+                      Mismatch rate per base, % |       0.68%
+                         Deletion rate per base |       0.02%
+                        Deletion average length |       2.39
+                        Insertion rate per base |       0.00%
+                       Insertion average length |       1.52
+                             MULTI-MAPPING READS:
+        Number of reads mapped to multiple loci |       106
+             % of reads mapped to multiple loci |       0.05%
+        Number of reads mapped to too many loci |       0
+             % of reads mapped to too many loci |       0.00%
+                                  UNMAPPED READS:
+  Number of reads unmapped: too many mismatches |       0
+       % of reads unmapped: too many mismatches |       0.00%
+            Number of reads unmapped: too short |       107741
+                 % of reads unmapped: too short |       55.42%
+                Number of reads unmapped: other |       19208
+                     % of reads unmapped: other |       9.88%
+                                  CHIMERIC READS:
+                       Number of chimeric reads |       0
+                            % of chimeric reads |       0.00%
+
+# try with untrimmed reads
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref --readFilesIn /usersdata/yiming/CARLIN/sra_amp/SRR11312001_2.fastq
+Sep 25 13:12:34 ..... finished successfully
+                                 Started job on |       Sep 25 13:11:34
+                             Started mapping on |       Sep 25 13:11:35
+                                    Finished on |       Sep 25 13:12:34
+       Mapping speed, Million of reads per hour |       11.88
+
+                          Number of input reads |       194704
+                      Average input read length |       350
+                                    UNIQUE READS:
+                   Uniquely mapped reads number |       52357
+                        Uniquely mapped reads % |       26.89%
+                          Average mapped length |       275.57
+                       Number of splices: Total |       7
+            Number of splices: Annotated (sjdb) |       0
+                       Number of splices: GT/AG |       0
+                       Number of splices: GC/AG |       0
+                       Number of splices: AT/AC |       0
+               Number of splices: Non-canonical |       7
+                      Mismatch rate per base, % |       0.68%
+                         Deletion rate per base |       0.02%
+                        Deletion average length |       2.31
+                        Insertion rate per base |       0.00%
+                       Insertion average length |       1.28
+                             MULTI-MAPPING READS:
+        Number of reads mapped to multiple loci |       64
+             % of reads mapped to multiple loci |       0.03%
+        Number of reads mapped to too many loci |       0
+             % of reads mapped to too many loci |       0.00%
+                                  UNMAPPED READS:
+  Number of reads unmapped: too many mismatches |       0
+       % of reads unmapped: too many mismatches |       0.00%
+            Number of reads unmapped: too short |       95913
+                 % of reads unmapped: too short |       49.26%
+                Number of reads unmapped: other |       46370
+                     % of reads unmapped: other |       23.82%
+                                  CHIMERIC READS:
+                       Number of chimeric reads |       0
+                            % of chimeric reads |       0.00%
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
