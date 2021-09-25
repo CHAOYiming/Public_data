@@ -840,6 +840,7 @@ conda install -c bioconda gatk
 # upload fasta file
 put /Users/guagua/Downloads/amp_ref.fasta /usersdata/yiming/CARLIN/sra_amp/
 
+STAR 
 
 
 
