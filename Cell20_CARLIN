@@ -935,10 +935,14 @@ Sep 25 13:12:34 ..... finished successfully
                        Number of chimeric reads |       0
                             % of chimeric reads |       0.00%
 
+# convert to bam files
+conda install -c bioconda samtools openssl=1.0
+samtools view -S Aligned.out.sam -b > amp.bam
+samtools sort amp.bam -o amp.sorted.bam
+samtools index amp.sorted.bam
 
-
-
-
+get /usersdata/yiming/CARLIN/STAR/amp.sorted.bam /Users/guagua/Downloads
+get /usersdata/yiming/CARLIN/STAR/amp.sorted.bam.bai /Users/guagua/Downloads
 
 
 
