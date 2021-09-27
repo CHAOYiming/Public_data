@@ -850,7 +850,6 @@ STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref --readFilesIn 
 
 # generate genome
 STAR --runThreadN 16 --runMode genomeGenerate --genomeDir /usersdata/yiming/CARLIN/amp_ref --genomeFastaFiles /usersdata/yiming/CARLIN/amp_ref/amp_ref.fasta
---sjdbGTFfile /home/yiming/reference/GRCh38_DNA_primary_assembly_index/Homo_sapiens.GRCh38.103.gtf --sjdbOverhang 100 &
 # Sep 25 12:54:22 ..... finished successfully
 
 # STAR alignment
@@ -944,11 +943,21 @@ samtools index amp.sorted.bam
 get /usersdata/yiming/CARLIN/STAR/amp.sorted.bam /Users/guagua/Downloads
 get /usersdata/yiming/CARLIN/STAR/amp.sorted.bam.bai /Users/guagua/Downloads
 
+# alignment with STARsolo (v2 kit)
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref --readFilesIn /usersdata/yiming/CARLIN/sra_amp/SRR11312001_2_trimmed.fq /usersdata/yiming/CARLIN/sra_amp/SRR11312001_1.fastq --soloCBwhitelist /usersdata/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt
+# change to env2
+samtools view -S Aligned.out.sam -b > amp.bam
+samtools sort amp.bam -o amp.sorted.bam
+samtools index amp.sorted.bam
 
-
-
-
-
+cellsnp-lite -s /usersdata/yiming/CARLIN/STARsolo/amp.sorted.bam -b /usersdata/yiming/CARLIN/cellranger_run/EB_FO864/outs/filtered_feature_bc_matrix/barcodes.tsv -O /usersdata/yiming/CARLIN/STARsolo/cellsnp -p 22 --minMAF 0.1 --minCOUNT 20 --gzip
+[I::main] start time: 2021-09-27 12:28:59
+[I::main] mode2: pileup 22 whole chromosomes in 5925 single cells.
+[E::csp_pileup] could not parse name for chrom 1.
+[E::main] running mode 2 failed.
+[E::main] Quiting...
+[I::main] end time: 2021-09-27 12:28:59
+[I::main] time spent: 0 seconds.
 
 
 
