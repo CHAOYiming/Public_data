@@ -959,7 +959,7 @@ cellsnp-lite -s /usersdata/yiming/CARLIN/STARsolo/amp.sorted.bam -b /usersdata/y
 [I::main] end time: 2021-09-27 12:28:59
 [I::main] time spent: 0 seconds.
 
-
+# without chrom
 
 
 
