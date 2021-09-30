@@ -961,6 +961,14 @@ cellsnp-lite -s /usersdata/yiming/CARLIN/STARsolo/amp.sorted.bam -b /usersdata/y
 
 # without chrom
 
+# run cellranger first to get the barcode list (?)
+# rename the files
+mv SRR11312001_1.fastq amptrimmed_S1_L001_R1_001.fastq
+mv SRR11312001_2_trimmed.fq amptrimmed_S1_L001_R2_001.fastq
+cellranger count --id=amptrimmed --fastqs=/usersdata/yiming/CARLIN/sra_amp/ --sample=amptrimmed --transcriptome=/usersdata/yiming/CARLIN/amp_ref --chemistry SC3Pv2
+# [error] Your reference does not contain the expected files, or they are not readable. Please check your reference folder on biomed1.sbms.hku.hk.
+# 2021-09-29 18:24:33 Shutting down.
+
 
 
 
