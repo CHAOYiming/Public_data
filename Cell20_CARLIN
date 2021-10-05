@@ -1020,12 +1020,18 @@ STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn
 cellranger count --id=amptrimmed --fastqs=/usersdata/yiming/CARLIN/sra_amp/ --sample=amptrimmed --transcriptome=/usersdata/yiming/CARLIN/amp_ref2 --chemistry SC3Pv2
 # [error] Your reference does not contain the expected files, or they are not readable. Please check your reference folder on biomed1.sbms.hku.hk.
 
+# trim into 150bp
+nohup fastq-dump --split-3 SRR11312001 &
+trim_galore SRR11312001_2.fastq --hardtrim5 100 --hardtrim3 100
+# only 5' 100bp left
+trim_galore SRR11312001_2.fastq --hardtrim5 250
+trim_galore SRR11312001_2.250bp_5prime.fq --hardtrim3 150
 
+# 4_align 150bp R2 with ref2
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp2/SRR11312001_2.250bp_5prime.150bp_3prime.fq
 
-
-
-
-
+# 5_align 150bp R2 with ref1
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref --readFilesIn /usersdata/yiming/CARLIN/sra_amp2/SRR11312001_2.250bp_5prime.150bp_3prime.fq
 
 
 
