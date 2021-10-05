@@ -1033,12 +1033,19 @@ STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn
 # 5_align 150bp R2 with ref1
 STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref --readFilesIn /usersdata/yiming/CARLIN/sra_amp2/SRR11312001_2.250bp_5prime.150bp_3prime.fq
 
+# 6_align STARsolo and specify v3 chemical
+# v3 barcode whitelist position
+# /home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/3M-february-2018.txt.gz
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R1_001.fastq --soloCBwhitelist /usersdata/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/3M-february-2018.txt.gz
+# Uniquely mapped reads % |       26.08%
 
+# 7_align specify CB and UMI 
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R1_001.fastq --soloCBwhitelist /usersdata/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/3M-february-2018.txt.gz --soloCBstart 1 --soloCBlen 16 --soloUMIstart 17 --soloUMIlen 12
+# Uniquely mapped reads % |       26.08%
 
-
-
-
-
+# 7_align specify CB and UMI 
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R1_001.fastq --soloCBstart 1 --soloCBlen 16 --soloUMIstart 17 --soloUMIlen 12
+# Uniquely mapped reads % |       26.08%
 
 
 
