@@ -1009,6 +1009,13 @@ STAR --runThreadN 16 --runMode genomeGenerate --genomeDir /usersdata/yiming/CARL
 # 1_align
 STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq
 # Uniquely mapped reads % |       62.83%
+# change to env2
+samtools view -S Aligned.out.sam -b > amp.bam
+samtools sort amp.bam -o amp.sorted.bam
+samtools index amp.sorted.bam
+get /usersdata/yiming/CARLIN/oct/1_align/amp.sorted.bam /Users/guagua/Downloads/new
+get /usersdata/yiming/CARLIN/oct/1_align/amp.sorted.bam.bai /Users/guagua/Downloads/new
+get /usersdata/yiming/CARLIN/amp_ref2/amp_ref2.fasta /Users/guagua/Downloads/new
 
 # 2_align
 STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R1_001.fastq --soloCBwhitelist /usersdata/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/737K-august-2016.txt
@@ -1029,23 +1036,34 @@ trim_galore SRR11312001_2.250bp_5prime.fq --hardtrim3 150
 
 # 4_align 150bp R2 with ref2
 STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp2/SRR11312001_2.250bp_5prime.150bp_3prime.fq
+# Uniquely mapped reads % |       61.90%
+# Number of splices: Non-canonical |       3039
 
 # 5_align 150bp R2 with ref1
 STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref --readFilesIn /usersdata/yiming/CARLIN/sra_amp2/SRR11312001_2.250bp_5prime.150bp_3prime.fq
+# Uniquely mapped reads % |       60.19%
+# Number of splices: Non-canonical |       1361
 
 # 6_align STARsolo and specify v3 chemical
 # v3 barcode whitelist position
 # /home/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/3M-february-2018.txt.gz
 STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R1_001.fastq --soloCBwhitelist /usersdata/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/3M-february-2018.txt.gz
 # Uniquely mapped reads % |       26.08%
+# Number of splices: Non-canonical |       35385
+# % of reads mapped to multiple loci |       29.46%
 
 # 7_align specify CB and UMI 
 STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R1_001.fastq --soloCBwhitelist /usersdata/yiming/application/cellranger-6.0.1/lib/python/cellranger/barcodes/3M-february-2018.txt.gz --soloCBstart 1 --soloCBlen 16 --soloUMIstart 17 --soloUMIlen 12
 # Uniquely mapped reads % |       26.08%
+# Number of splices: Non-canonical |       35385
+# % of reads mapped to multiple loci |       29.46%
 
-# 7_align specify CB and UMI 
+# 8_align specify CB and UMI 
 STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R1_001.fastq --soloCBstart 1 --soloCBlen 16 --soloUMIstart 17 --soloUMIlen 12
 # Uniquely mapped reads % |       26.08%
+# Number of splices: Non-canonical |       35385
+# % of reads mapped to multiple loci |       29.46%
+
 
 
 
