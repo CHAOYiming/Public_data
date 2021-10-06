@@ -1063,6 +1063,41 @@ STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn
 # Uniquely mapped reads % |       26.08%
 # Number of splices: Non-canonical |       35385
 # % of reads mapped to multiple loci |       29.46%
+samtools view -S Aligned.out.sam -b > amp.bam
+samtools sort amp.bam -o amp.sorted.bam
+samtools index amp.sorted.bam
+get /usersdata/yiming/CARLIN/oct/8_align/amp.sorted.bam /Users/guagua/Downloads/2
+get /usersdata/yiming/CARLIN/oct/8_align/amp.sorted.bam.bai /Users/guagua/Downloads/2
+
+# 9_align
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq —outFilterMismatchNmax 35
+# EXITING because of fatal input ERROR: could not open readFilesIn=—-outFilterMismatchNmax
+
+# try on sc data
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R1_001.fastq --soloCBstart 1 --soloCBlen 16 --soloUMIstart 17 --soloUMIlen 12 —-outFilterMismatchNmax 35
+# Uniquely mapped reads % |       26.08%
+# Number of splices: Non-canonical |       35385
+
+# 10_align
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R1_001.fastq --soloCBstart 1 --soloCBlen 16 --soloUMIstart 17 --soloUMIlen 12 --outFilterMismatchNoverReadLmax 0.04
+# Uniquely mapped reads % |       26.02%
+# Number of splices: Non-canonical |       35357
+
+# 11_align
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R1_001.fastq --soloCBstart 1 --soloCBlen 16 --soloUMIstart 17 --soloUMIlen 12 --outFilterMismatchNoverReadLmax 2.0
+# Uniquely mapped reads % |       26.08%
+# Number of splices: Non-canonical |       35385
+
+
+
+
+
+
+
+
+
+
+
 
 
 
