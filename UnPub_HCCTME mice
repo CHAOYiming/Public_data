@@ -142,5 +142,41 @@ diffgenes <- c('Lag3')
 diffgenes <- c('Piezo1', 'Piezo2', 'Cop1','Trpv1', 'Trpv2', 'Trpv3', 'Trpv4')
 
 
+# final one
+diffgenes <- c('Cd47', 'Sirpa', 'Havcr2', 'Ceacam1', 'Tgfb1', 'Tgfbr2')
+diffgenes <- c('Klf4', 'Klf6', 'Mafb', 'Irf2', 'Irf5', 'Irf7', 'Irf8', 'Spi1', 'Stat3')
+
+
+# find markers for every cluster compared to all remaining cells, report only the positive
+# ones
+sample.markers <- FindAllMarkers(sample, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+sample.markers %>%
+  group_by(cluster) %>%
+  slice_max(n = 2, order_by = avg_log2FC)
+
+cluster0.markers <- FindMarkers(sample, ident.1 = 'TAMs', logfc.threshold = 0.25, test.use = "roc", only.pos = TRUE)
+
+VlnPlot(sample, features = c('Cd47', 'Sirpa', 'Havcr2', 'Ceacam1', 'Tgfb1', 'Tgfbr2'))
+VlnPlot(sample, features = c("NKG7", "PF4"), slot = "counts", log = TRUE)
+
+sample.markers %>%
+  group_by(cluster) %>%
+  top_n(n = 10, wt = avg_log2FC) -> top10
+DoHeatmap(sample, features = top10$gene) + NoLegend()
+
+library(ggplot2)
+DoHeatmap(object = sample, features = top10$gene) + scale_fill_gradientn(colors = c("blue", "white", "red"))
+
+library(viridis)
+DoHeatmap(object = sample, features = top10$gene) + scale_fill_viridis()
+
+FeaturePlot(sample, features = c('Cd47', 'Sirpa', 'Havcr2', 'Ceacam1', 'Tgfb1', 'Tgfbr2'))
+DotPlot(object = sample, features = c('Cd47', 'Sirpa', 'Havcr2', 'Ceacam1', 'Tgfb1', 'Tgfbr2'))
+
+FeaturePlot(sample, features = c('Klf4', 'Klf6', 'Mafb', 'Irf2', 'Irf5', 'Irf7', 'Irf8', 'Spi1', 'Stat3'))
+DotPlot(object = sample, features = c('Klf4', 'Klf6', 'Mafb', 'Irf2', 'Irf5', 'Irf7', 'Irf8', 'Spi1', 'Stat3'))
+
+saveRDS(sample, file = "final.rds")
+
 
 
