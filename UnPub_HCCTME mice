@@ -1,0 +1,146 @@
+####################################
+# scRNA-seq downstream analysis
+# Dataset: Carmen's dataset
+# 2021-10 Yiming
+####################################
+
+library(Matrix)
+library(dplyr)
+library(Seurat)
+library(patchwork)
+library(devtools)
+library(cowplot)
+library(scSorter)
+library(ggplot2)
+library(CellChat)
+library(SingleR)
+
+rm(list = ls())
+setwd("/Users/guagua/Downloads/Jacinth_scRNAseq/V2")
+
+# construct matrix after cellranger
+V2 <- readMM(file = "matrix.mtx.gz")
+feature.names = read.delim("features.tsv.gz",
+                           header = FALSE,
+                           stringsAsFactors = FALSE)
+barcode.names = read.delim("barcodes.tsv.gz",
+                           header = FALSE,
+                           stringsAsFactors = FALSE)
+colnames(V2) = barcode.names $ V1
+rownames(V2) = feature.names $ V2
+sample <- CreateSeuratObject(counts = V2, project = "hcc", min.cells = 3, min.features = 100)
+
+# quality control
+sample[["percent.mt"]] <- PercentageFeatureSet(sample, pattern = "^MT-")
+VlnPlot(sample, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
+plot1 <- FeatureScatter(sample, feature1 = "nFeature_RNA", feature2 = "percent.mt")
+plot2 <- FeatureScatter(sample, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+plot1 + plot2
+sample <- subset(sample, subset = nFeature_RNA > 200 & nFeature_RNA < 5000 & percent.mt < 15)
+
+# normalization 
+sample <- NormalizeData(sample, normalization.method = "LogNormalize", scale.factor = 10000)
+sample <- FindVariableFeatures(sample, selection.method = "vst", nfeatures = 2000)
+
+# Identify the 10 most highly variable genes
+top10 <- head(VariableFeatures(sample), 10)
+top20 <- head(VariableFeatures(sample), 20)
+top30 <- head(VariableFeatures(sample), 30)
+top100 <- head(VariableFeatures(sample), 100)
+
+# plot variable features with and without labels
+plot1 <- VariableFeaturePlot(sample)
+plot2 <- LabelPoints(plot = plot1, points = top100, repel = TRUE)
+plot1 + plot2
+
+# scaling data
+all.genes <- rownames(sample)
+sample <- ScaleData(sample, features = all.genes)
+
+# dimension reduction
+sample <- RunPCA(sample, features = VariableFeatures(object = sample))
+
+# Examine and visualize PCA results a few different ways
+print(sample[["pca"]], dims = 1:5, nfeatures = 5)
+VizDimLoadings(sample, dims = 1:2, reduction = "pca")
+DimPlot(sample, reduction = "pca")
+DimHeatmap(sample, dims = 1, cells = 500, balanced = TRUE)
+DimHeatmap(sample, dims = 1:15, cells = 500, balanced = TRUE)
+
+# cell clusters
+sample <- FindNeighbors(sample, dims = 1:10)
+sample <- FindClusters(sample, resolution = 0.5)
+
+# UMAP
+sample <- RunUMAP(sample, dims = 1:10)
+DimPlot(sample, reduction = "umap")
+DimPlot(sample, reduction = "umap", split.by = 'ident')
+
+# expression examination
+diffgenes <- c("Cd34","Ccl6","Mpo","Cd14","Camp","Hba-a1","H2afz","Hmgb2","Runx1")
+diffgenes <- c("CD14", "CD3D", "CD24", "CD47")
+FeaturePlot(sample, features = diffgenes)
+DotPlot(object = sample, features = diffgenes)
+
+# load annotation file
+anno <- read.csv(file = "/Users/guagua/Library/Mobile Documents/com~apple~CloudDocs/PhD/Public data/HCC_Carmen lab/tme_annotation2.csv", header = TRUE )
+
+# Identify the 10 most highly variable genes
+topgenes <- head(VariableFeatures(sample), 2000)
+expr = GetAssayData(sample)
+topgene_filter = rowSums(as.matrix(expr)[topgenes, ]!=0) > ncol(expr)*.1
+topgenes = topgenes[topgene_filter]
+
+# At last, we subset the preprocessed expression data. Now, we are ready to run scSorter.
+picked_genes = unique(c(anno$Marker, topgenes))
+expr = expr[rownames(expr) %in% picked_genes, ]
+
+# run scSorter
+rts <- scSorter(expr, anno)
+
+#The cell type assignment results are stored in the Pred_Type vector.
+print(table(rts$Pred_Type))
+
+# add label
+Idents(sample) = rts$Pred_Type
+DimPlot(sample, reduction = "umap")
+DimPlot(sample, reduction = "umap", split.by = 'ident')
+
+# import reference 
+ref <- MouseRNAseqData()
+
+# run SingleR
+type <- SingleR(V2, ref, ref$label.main)
+print(table(type$labels))
+Idents(sample) = type$labels
+DimPlot(sample, reduction = "umap")
+
+V2@Dimnames[[2]]
+merge <- merge(V2@Dimnames[[2]], type, by=type$label)
+
+
+diffgenes <- c("Pdcd1", "Cd274")
+FeaturePlot(sample, features = diffgenes)
+DotPlot(object = sample, features = diffgenes)
+
+diffgenes <- c("Siglec1", "Siglec2","Siglec3","Siglec4","Siglec5","Siglec6","Siglec7","Siglec8","Siglec9","Siglec10")
+diffgenes <- c('Cd47', 'Sirpa')
+diffgenes <- c('Havcr2', 'Ceacam1')
+
+diffgenes <- c('Tigit', 'Pvr', 'Nectin2')
+diffgenes <- c('Tgfb1', 'Tgfb3', 'Tgfbr1', 'Tgfbr2')
+diffgenes <- c('Notch1', 'Rbpj')
+
+diffgenes <- c('Pik3cg', 'Btk', 'Ldha')
+diffgenes <- c('Klf4', 'Klf6', 'Mafb', 'Maf')
+
+diffgenes <- c('Irf1', 'Irf2', 'Irf3', 'Irf4','Irf5', 'Irf6', 'Irf7', 'Irf8','Irf9')
+diffgenes <- c('Snai1', 'Myc', 'Nfkb1', 'Spi1')
+diffgenes <- c('Stat1', 'Stat3', 'Stat6')
+diffgenes <- c('Tfeb', 'Nfat5')
+diffgenes <- c('Lag3')
+diffgenes <- c('Piezo1', 'Piezo2', 'Cop1','Trpv1', 'Trpv2', 'Trpv3', 'Trpv4')
+
+
+
+
