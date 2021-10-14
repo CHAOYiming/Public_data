@@ -1088,6 +1088,7 @@ STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn
 # Uniquely mapped reads % |       26.08%
 # Number of splices: Non-canonical |       35385
 
+# STAR with UMItools
 
 
 
