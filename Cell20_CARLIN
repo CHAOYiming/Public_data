@@ -1006,7 +1006,7 @@ STAR --runThreadN 16 --runMode genomeGenerate --genomeDir /usersdata/yiming/CARL
 
 STAR --runThreadN 16 --runMode genomeGenerate --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --genomeFastaFiles /usersdata/yiming/CARLIN/amp_ref2/amp_ref2.fasta --sjdbGTFfile /usersdata/yiming/CARLIN/amp_ref2/amp_gtf2.gtf --genomeSAindexNbases 3
 
-# 1_align
+# 1_align bulk
 STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq
 # Uniquely mapped reads % |       62.83%
 # change to env2
