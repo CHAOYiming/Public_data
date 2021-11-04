@@ -1,0 +1,66 @@
+####################################
+# scRNA-seq downstream analysis
+# COVID-19
+# Dataset: https://cells.ucsc.edu/?ds=covid19-balf
+# 2021-11 Yiming
+####################################
+
+require(Seurat)
+require(data.table)
+
+library(Seurat)
+library(tidyverse)
+
+mat <- fread("https://cells.ucsc.edu/covid19-balf/exprMatrix.tsv.gz")
+meta <- data.frame(fread("https://cells.ucsc.edu/covid19-balf/meta.tsv"), row.names=1)
+genes = mat[,1][[1]]
+genes = gsub(".+[|]", "", genes)
+mat = data.frame(mat[,-1], row.names=genes)
+sample <- CreateSeuratObject(counts = mat, project = "COVID", meta.data=meta)
+
+sample
+sample@meta.data
+
+# quality control
+sample[["percent.mt"]] <- PercentageFeatureSet(sample, pattern = "^MT-")
+sample <- subset(sample, subset = nFeature_RNA > 200 & nFeature_RNA < 5000 & percent.mt < 15)
+
+# normalization 
+sample <- NormalizeData(sample, normalization.method = "LogNormalize", scale.factor = 10000)
+sample <- FindVariableFeatures(sample, selection.method = "vst", nfeatures = 2000)
+
+# scaling data
+all.genes <- rownames(sample)
+sample <- ScaleData(sample, features = all.genes)
+
+# dimension reduction
+sample <- RunPCA(sample, features = VariableFeatures(object = sample))
+
+# Examine and visualize PCA results a few different ways
+print(sample[["pca"]], dims = 1:5, nfeatures = 5)
+
+# cell clusters
+sample <- FindNeighbors(sample, dims = 1:10)
+sample <- FindClusters(sample, resolution = 0.5)
+
+# add anno
+sample@meta.data$celltype %>% table() 
+Idents(sample) <- sample@meta.data$celltype
+
+# UMAP
+sample <- RunUMAP(sample, dims = 1:10)
+DimPlot(sample, reduction = "umap")
+DimPlot(sample, reduction = "umap", split.by = 'celltype')
+
+diffgenes <- c('S100A9', 'CCL18')
+FeaturePlot(sample, features = diffgenes)
+DotPlot(object = sample, features = diffgenes)
+
+
+
+
+
+
+
+
+
