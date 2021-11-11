@@ -1104,6 +1104,25 @@ STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn
 
 STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra/EB_FO864_S1_L002_R2_001.fastq /usersdata/yiming/CARLIN/sra/EB_FO864_S1_L002_R1_001.fastq
 
+# nov_7_align
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq --outFilterMismatchNmax 20
+Uniquely mapped reads % |       63.61%
+Number of reads unmapped: too short |       27250
+% of reads unmapped: too short |       14.02%
+Number of reads unmapped: other |       42213
+% of reads unmapped: other |       21.71%
+		     
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq --outFilterMismatchNoverLmax 0.5
+Uniquely mapped reads % |       62.83%
+
+STAR --runThreadN 16 --genomeDir /usersdata/yiming/CARLIN/amp_ref2 --readFilesIn /usersdata/yiming/CARLIN/sra_amp/amptrimmed_S1_L001_R2_001.fastq --outFilterMismatchNmax 20 --outFilterMismatchNoverLmax 0.5
+Uniquely mapped reads % |       63.61%
+% of reads unmapped: too short |       14.02%
+% of reads unmapped: other |       21.71%
+
+
+
+
 
 
 
