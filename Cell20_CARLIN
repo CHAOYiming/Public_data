@@ -1182,7 +1182,20 @@ STAR --runThreadN 16 \
 Uniquely mapped reads % |       38.29%
 
 
+nov 
+# 11_umitools renamed
+/usersdata/yiming/CARLIN/nov/11_umitools/amp_R2_extracted.fastq.gz
 
+# 12_align with star based on umi-tools [1730]
+CB list: /usersdata/yiming/CARLIN/nov/12_align/Aligned.sortedByCoord.out_CB_count.csv
+
+# 13_align with cellranger [bad, 3]
+
+# 14_align with minimap2 (in sam format)
+minimap2 -a /usersdata/yiming/CARLIN/amp_ref5cr/amp_ref5.fasta /usersdata/yiming/CARLIN/nov/11_umitools/amp_R2_extracted.fastq.gz > alignment.sam
+samtools view -S alignment.sam -b > amp.bam
+samtools sort amp.bam -o amp.sorted.bam
+samtools index amp.sorted.bam
 
 
 
