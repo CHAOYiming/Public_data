@@ -1197,7 +1197,9 @@ samtools view -S alignment.sam -b > amp.bam
 samtools sort amp.bam -o amp.sorted.bam
 samtools index amp.sorted.bam
 
+featureCounts -T 16 -a /usersdata/yiming/CARLIN/amp_ref5cr/filtered.gtf -o gene_assigned -t exon -F GTF -g transcript_id -R BAM /usersdata/yiming/CARLIN/nov/14_minimap/amp.sorted.bam
 
+-> CB.csv -> 2513 cells, ~42%
 
 
 
